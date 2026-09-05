@@ -65,9 +65,9 @@ export default function AnimeTadkaCard({ anime, priority = false }: AnimeTadkaCa
 
         {/* Details Title */}
         <div className="card-details pt-2">
-          <h2 className="card-title text-xs sm:text-[13px] font-bold text-white group-hover:text-blue-400 transition-colors line-clamp-1" title={anime.title}>
+          <h3 className="card-title text-xs sm:text-[13px] font-bold text-white group-hover:text-blue-400 transition-colors line-clamp-1" title={anime.title}>
             {anime.title}
-          </h2>
+          </h3>
         </div>
       </Link>
     </div>

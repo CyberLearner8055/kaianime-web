@@ -237,7 +237,7 @@ export default async function AnimeDetailPage({ params }: PageProps) {
                   </span>
                 ) : (
                   <span className="px-2.5 py-1 bg-blue-600 text-white font-extrabold text-[11px] uppercase tracking-wider rounded-lg shadow-lg">
-                    Subbed
+                    Multi Audio
                   </span>
                 )}
                 <span className="px-2 py-0.5 text-xs font-bold bg-black/75 text-amber-300 border border-amber-500/20 rounded-lg backdrop-blur-sm flex items-center gap-1">
@@ -291,7 +291,7 @@ export default async function AnimeDetailPage({ params }: PageProps) {
               <div className="flex items-center justify-between border-b border-white/5 pb-2.5">
                 <span className="text-slate-400">Audio</span>
                 <span className="font-bold text-slate-200">
-                  {anime.langs || (anime.isHindiDubbed ? "Hindi, Japanese" : "Japanese")}
+                  {anime.langs || (anime.isHindiDubbed ? "Hindi, Japanese" : "Hindi, English, Japanese")}
                 </span>
               </div>
               <div className="flex items-center justify-between">

@@ -44,6 +44,16 @@ export default async function HomePage() {
 
   return (
     <div className="max-w-7xl w-full mx-auto px-4 sm:px-6 py-3">
+      {/* Primary SEO H1 for Home Page */}
+      <div className="pt-1 pb-2.5 px-1 flex flex-col sm:flex-row sm:items-center justify-between gap-1 border-b border-white/5 mb-2">
+        <h1 className="text-sm sm:text-base font-extrabold text-white tracking-tight">
+          Watch Latest <span className="text-blue-500">Hindi Dubbed Anime</span> Online Free in Full HD
+        </h1>
+        <span className="text-[11px] text-slate-400 font-semibold">
+          100% Ad-Free Streaming &bull; Multi-Audio
+        </span>
+      </div>
+
       {/* 1. Upper Slider (App BannerSlider style with Featured & Promo) */}
       <SpotlightSwiper spotlights={slimSpotlights} />
 

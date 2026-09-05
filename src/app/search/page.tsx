@@ -7,15 +7,37 @@ export const metadata: Metadata = {
   title: "Browse & Search Anime Catalog | KaiAnime.site",
   description:
     "Search and browse our entire database of anime series and movies. Filter by genre, Hindi dub, rating, and watch with zero ads on KaiAnime.site.",
+  alternates: {
+    canonical: "https://kaianime.site/search",
+  },
 };
 
 export const dynamic = "force-dynamic";
+
+function toSearchAnime(a: any) {
+  return {
+    id: a.id,
+    title: a.title,
+    japaneseTitle: a.japaneseTitle,
+    poster: a.poster,
+    genres: a.genres || [],
+    rating: a.rating || 0,
+    isHindiDubbed: Boolean(a.isHindiDubbed),
+    type: a.type || "TV",
+    status: a.status || "Completed",
+    episodesCount: a.episodesCount || 1,
+    seasons: [],
+    episodes: [{ id: `${a.id}-1`, number: 1, title: "Episode 1", servers: {} }],
+  };
+}
 
 export default async function SearchPage() {
   const [allAnime, allGenres] = await Promise.all([
     fetchAllAnime(),
     getAllGenres(),
   ]);
+
+  const searchAnimeList = allAnime.map(toSearchAnime);
 
   return (
     <Suspense
@@ -25,7 +47,7 @@ export default async function SearchPage() {
         </div>
       }
     >
-      <SearchClient initialAnime={allAnime} allGenres={allGenres} />
+      <SearchClient initialAnime={searchAnimeList as any} allGenres={allGenres} />
     </Suspense>
   );
 }

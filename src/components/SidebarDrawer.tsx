@@ -2,7 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
-import { X, Smartphone, Film, Tv, Sparkles, ChevronDown, Info } from "lucide-react";
+import { X, Smartphone, Film, Tv, Sparkles, ChevronDown, Info, Flame } from "lucide-react";
 
 interface SidebarDrawerProps {
   isOpen: boolean;
@@ -10,7 +10,7 @@ interface SidebarDrawerProps {
 }
 
 const languages = [
-  { name: "Hindi", href: "/search?lang=hindi" },
+  { name: "Hindi", href: "/hindi-dubbed-anime" },
   { name: "Tamil", href: "/search?lang=tamil" },
   { name: "Telugu", href: "/search?lang=telugu" },
   { name: "Bengali", href: "/search?lang=bengali" },
@@ -64,6 +64,16 @@ export default function SidebarDrawer({ isOpen, onClose }: SidebarDrawerProps) {
             <span>Get App</span>
           </Link>
 
+          <Link href="/hindi-dubbed-anime" onClick={onClose} className="ak-single-link text-emerald-400 font-bold">
+            <Sparkles className="w-5 h-5 text-emerald-400" />
+            <span>Hindi Dubbed Anime</span>
+          </Link>
+
+          <Link href="/trending-anime-india" onClick={onClose} className="ak-single-link text-amber-300 font-bold">
+            <Flame className="w-5 h-5 text-amber-400" />
+            <span>Trending in India</span>
+          </Link>
+
           <Link href="/home#running" onClick={onClose} className="ak-single-link">
             <Sparkles className="w-5 h-5 text-amber-400" />
             <span>Running Anime</span>
@@ -74,9 +84,9 @@ export default function SidebarDrawer({ isOpen, onClose }: SidebarDrawerProps) {
             <span>Series</span>
           </Link>
 
-          <Link href="/home#latest-updates" onClick={onClose} className="ak-single-link">
+          <Link href="/anime-movies-in-hindi" onClick={onClose} className="ak-single-link">
             <Film className="w-5 h-5 text-sky-400" />
-            <span>Movies</span>
+            <span>Movies in Hindi</span>
           </Link>
 
           {/* Languages Accordion */}

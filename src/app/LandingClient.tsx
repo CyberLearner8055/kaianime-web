@@ -120,8 +120,8 @@ export default function LandingClient({ animeList }: LandingClientProps) {
             </span>
           </div>
 
-          <h1 className="landing-title text-3xl sm:text-5xl font-black uppercase tracking-tight text-white">
-            WELCOME TO <span className="text-blue-500">KAIANIME</span>
+          <h1 className="landing-title text-2xl sm:text-4xl md:text-5xl font-black uppercase tracking-tight text-white leading-tight max-w-3xl mx-auto">
+            Watch <span className="text-blue-500">Hindi Dubbed Anime</span> Online Free in Full HD - KaiAnime
           </h1>
           <p className="landing-desc text-xs sm:text-sm text-slate-300 max-w-xl mx-auto mt-2.5 leading-relaxed">
             Explore the largest library of high-quality Anime, Movies in Hindi Dub, Tamil, Telugu & Multi-Audio 100% Ad-Free.

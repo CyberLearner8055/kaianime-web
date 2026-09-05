@@ -33,15 +33,9 @@ export default function AnimeCard({ anime, priority = false, rank }: AnimeCardPr
         {/* Top Badges */}
         <div className="absolute top-2.5 left-2.5 right-2.5 flex items-center justify-between gap-1 pointer-events-none">
           <div className="flex items-center gap-1.5 flex-wrap">
-            {anime.isHindiDubbed ? (
-              <span className="px-2 py-0.5 text-[10px] font-black uppercase tracking-wide bg-emerald-500 text-black shadow-md rounded-md backdrop-blur-sm">
-                Hindi Dub
-              </span>
-            ) : (
-              <span className="px-2 py-0.5 text-[10px] font-black uppercase tracking-wide bg-blue-600 text-white shadow-md rounded-md backdrop-blur-sm">
-                Sub
-              </span>
-            )}
+            <span className="px-2 py-0.5 text-[10px] font-black uppercase tracking-wide bg-blue-600 text-white shadow-md rounded-md backdrop-blur-sm">
+              Hindi Dub
+            </span>
             <span className="px-1.5 py-0.5 text-[10px] font-bold bg-black/60 text-slate-200 border border-white/10 rounded-md backdrop-blur-sm">
               HD
             </span>
@@ -82,13 +76,14 @@ export default function AnimeCard({ anime, priority = false, rank }: AnimeCardPr
       {/* Info Details */}
       <div className="p-3 flex flex-col flex-1 justify-between gap-1.5">
         <div>
-          <Link
-            href={`/anime/${anime.id}`}
-            className="block font-bold text-sm text-white hover:text-blue-400 transition-colors line-clamp-1"
-            title={anime.title}
-          >
-            {anime.title}
-          </Link>
+          <h3 className="font-bold text-sm text-white hover:text-blue-400 transition-colors line-clamp-1">
+            <Link
+              href={`/anime/${anime.id}`}
+              title={anime.title}
+            >
+              {anime.title}
+            </Link>
+          </h3>
           <p className="text-[11px] text-slate-400 line-clamp-1 mt-0.5">
             {anime.genres.slice(0, 2).join(" • ") || "Anime"}
           </p>

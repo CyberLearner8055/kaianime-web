@@ -28,16 +28,23 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     title,
     description: desc,
     keywords: [
-      `${anime.title} episode ${epNum}`,
-      `watch ${anime.title} ep ${epNum}`,
-      `${anime.title} ep ${epNum} hindi dub`,
+      `watch ${anime.title} episode ${epNum} hindi dub`,
+      `download ${anime.title} ep ${epNum} hindi dubbed 720p 1080p`,
+      `${anime.title} episode ${epNum} free stream online`,
+      `${anime.title} ep ${epNum} full hd 0 ads`,
+      `${anime.title} ep ${epNum} multi audio`,
       `${anime.title} ep ${epNum} english sub`,
+      "watch anime hindi dub free",
       "kaianime",
-      "free anime streaming",
+      "anime drive",
     ],
+    alternates: {
+      canonical: `https://kaianime.site/watch/${anime.id}/${epNum}`,
+    },
     openGraph: {
       title,
       description: desc,
+      url: `https://kaianime.site/watch/${anime.id}/${epNum}`,
       images: [{ url: anime.banner || anime.poster, width: 1200, height: 630 }],
     },
     twitter: {
@@ -67,14 +74,21 @@ export default async function WatchPage({ params }: PageProps) {
       servers: {},
     };
 
+  // Deterministic stable upload date to prevent Google Rich Snippets strip
+  const safeYear = anime.year ? String(anime.year).replace(/\D/g, "") : "2024";
+  const releaseYear = safeYear.length === 4 ? safeYear : "2024";
+  const stableUploadDate = `${releaseYear}-01-01T00:00:00.000Z`;
+
   // VideoObject Schema.org for Google Search Rich Video snippets
   const videoSchema = {
     "@context": "https://schema.org",
     "@type": "VideoObject",
-    name: `${anime.title} Episode ${epNum}`,
-    description: `Watch ${anime.title} Episode ${epNum} in HD with zero ads on KaiAnime.`,
+    name: `Watch ${anime.title} Episode ${epNum} Hindi Dubbed Online Free - KaiAnime`,
+    description: `Stream and download ${anime.title} Episode ${epNum} in Full HD 1080p with Hindi Dubbed audio and English subtitles. 100% ad-free on KaiAnime.site.`,
     thumbnailUrl: [anime.banner || anime.poster],
-    uploadDate: new Date().toISOString(),
+    uploadDate: stableUploadDate,
+    duration: "PT24M",
+    inLanguage: ["hi", "en", "ja"],
     contentUrl: `https://kaianime.site/watch/${anime.id}/${epNum}`,
     embedUrl: `https://kaianime.site/watch/${anime.id}/${epNum}`,
   };

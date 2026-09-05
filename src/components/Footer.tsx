@@ -9,8 +9,27 @@ export default function Footer() {
         {/* Browse by Letter A-Z */}
         <BrowseByLetter />
 
+        {/* Key Category Hub Links for Internal SEO Flow */}
+        <nav className="flex flex-wrap items-center justify-center gap-3 sm:gap-6 py-4 text-blue-400 font-bold text-xs">
+          <Link href="/hindi-dubbed-anime" className="hover:text-blue-300 transition-colors">
+            Hindi Dubbed Anime
+          </Link>
+          <span className="text-slate-600 hidden sm:inline">•</span>
+          <Link href="/trending-anime-india" className="hover:text-blue-300 transition-colors">
+            Trending Anime in India
+          </Link>
+          <span className="text-slate-600 hidden sm:inline">•</span>
+          <Link href="/anime-movies-in-hindi" className="hover:text-blue-300 transition-colors">
+            Anime Movies in Hindi
+          </Link>
+          <span className="text-slate-600 hidden sm:inline">•</span>
+          <Link href="/search" className="hover:text-blue-300 transition-colors">
+            All Anime Catalog
+          </Link>
+        </nav>
+
         {/* Footer Navigation Pages (NO CREDITS) */}
-        <nav className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 py-5 text-slate-300 font-semibold text-xs border-b border-white/5">
+        <nav className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 py-3 text-slate-300 font-semibold text-xs border-b border-white/5">
           <Link href="/contact" className="hover:text-blue-400 transition-colors">
             Contact Us
           </Link>

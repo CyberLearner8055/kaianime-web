@@ -196,6 +196,16 @@ export default function WatchClient({ anime, episode, epNumber }: WatchClientPro
         </div>
       </div>
 
+      {/* Primary Page H1 with rich target keywords */}
+      <div className="mb-3 px-3 sm:px-0">
+        <h1 className="text-base sm:text-xl md:text-2xl font-black text-white tracking-tight leading-snug">
+          Watch <span className="text-blue-500">{anime.title}</span> Episode {epNumber} Hindi Dubbed Online Free
+        </h1>
+        <p className="text-[11px] sm:text-xs text-slate-400 mt-0.5 font-medium">
+          Full HD 1080p &bull; 100% Ad-Free &bull; Multi-Audio (Hindi Dub, English Sub, Japanese)
+        </p>
+      </div>
+
       {/* Video Player Canvas Container (Mobile Full-Bleed, Desktop max-w-5xl Clean Fit) */}
       <div className="relative w-full aspect-video bg-black sm:rounded-2xl overflow-hidden border-y sm:border border-white/10 shadow-2xl shadow-blue-950/20">
         {loading ? (
@@ -340,6 +350,17 @@ export default function WatchClient({ anime, episode, epNumber }: WatchClientPro
             </Link>
           ))}
         </div>
+      </div>
+
+      {/* SEO Info & Download Synopsis Block */}
+      <div className="mt-4 sm:mt-6 p-4 sm:p-5 rounded-xl sm:rounded-2xl bg-[#0a0d14] border border-white/8 mx-3 sm:mx-0 text-xs text-slate-300 space-y-2">
+        <h2 className="font-bold text-sm text-white flex items-center gap-2">
+          <Film className="w-4 h-4 text-blue-400" />
+          <span>About {anime.title} Episode {epNumber} Streaming &amp; Download</span>
+        </h2>
+        <p className="text-slate-400 leading-relaxed text-xs">
+          Watch and download <strong>{anime.title} Episode {epNumber}</strong> online in Full HD with Hindi Dubbed audio and multi-language subtitles. Enjoy uninterrupted anime streaming completely free with 0 ads, 0 popups, and high-speed cloud servers on KaiAnime.site.
+        </p>
       </div>
     </div>
   );
