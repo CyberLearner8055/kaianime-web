@@ -8,7 +8,7 @@ const APPSCRIPT_TRENDING_URL =
 // In-memory cache for ultra-fast server responses
 let memoryCache: Anime[] | null = null;
 let lastFetchTime = 0;
-const CACHE_TTL = 300 * 1000; // 5 minutes
+const CACHE_TTL = 24 * 3600 * 1000; // 24 hours RAM cache
 
 let trendingCache: Anime[] | null = null;
 let lastTrendingFetch = 0;
@@ -20,6 +20,17 @@ export function purgeAnimeDataCache(): void {
   lastTrendingFetch = 0;
   runningCache = null;
   lastRunningFetch = 0;
+  if (typeof window === "undefined") {
+    try {
+      const fsModule = eval("require")("fs");
+      const pathModule = eval("require")("path");
+      const osModule = eval("require")("os");
+      const tmpPath = pathModule.join(osModule.tmpdir(), "kaianime_catalog_cache.json");
+      if (fsModule.existsSync(tmpPath)) {
+        fsModule.unlinkSync(tmpPath);
+      }
+    } catch {}
+  }
 }
 
 export function slugify(text: string): string {
@@ -42,12 +53,30 @@ export async function fetchAllAnime(): Promise<Anime[]> {
     return memoryCache;
   }
 
+  // 1. Ultra-fast local /tmp disk cache check (5ms on serverless)
+  if (typeof window === "undefined") {
+    try {
+      const fsModule = eval("require")("fs");
+      const pathModule = eval("require")("path");
+      const osModule = eval("require")("os");
+      const tmpPath = pathModule.join(osModule.tmpdir(), "kaianime_catalog_cache.json");
+      if (fsModule.existsSync(tmpPath)) {
+        const cachedStr = fsModule.readFileSync(tmpPath, "utf8");
+        const parsedCached = JSON.parse(cachedStr);
+        if (Array.isArray(parsedCached) && parsedCached.length > 0) {
+          memoryCache = parsedCached;
+          lastFetchTime = now;
+          return memoryCache;
+        }
+      }
+    } catch {}
+  }
+
   const siteConfig = await loadSiteConfig();
   const currentDataUrl = siteConfig.dataUrl || DATA_URL;
 
   try {
     const res = await fetch(currentDataUrl, {
-      cache: "no-store",
       headers: {
         "Accept": "application/json",
         "User-Agent": "KaiAnime-Web/1.0",
@@ -169,6 +198,18 @@ export async function fetchAllAnime(): Promise<Anime[]> {
 
     memoryCache = parsed;
     lastFetchTime = now;
+
+    // Persist parsed data to /tmp for other serverless lambdas
+    if (typeof window === "undefined") {
+      try {
+        const fsModule = eval("require")("fs");
+        const pathModule = eval("require")("path");
+        const osModule = eval("require")("os");
+        const tmpPath = pathModule.join(osModule.tmpdir(), "kaianime_catalog_cache.json");
+        fsModule.writeFileSync(tmpPath, JSON.stringify(parsed), "utf8");
+      } catch {}
+    }
+
     return parsed;
   } catch (err: any) {
     if (err?.digest === "DYNAMIC_SERVER_USAGE") {
@@ -206,8 +247,8 @@ export async function getAppTrendingAnime(): Promise<Anime[]> {
 
   try {
     const res = await fetch(APPSCRIPT_TRENDING_URL, {
-      next: { revalidate: 300 },
-      signal: AbortSignal.timeout(6000),
+      next: { revalidate: 3600, tags: ["app-trending"] },
+      signal: AbortSignal.timeout(800),
     });
 
     if (res.ok) {
@@ -306,9 +347,9 @@ export async function getRunningAnime(): Promise<Anime[]> {
 
   try {
     const res = await fetch("https://medal-chronicle-initial-fee.trycloudflare.com/", {
-      cache: "no-store",
+      next: { revalidate: 1800, tags: ["running-anime"] },
       headers: { "User-Agent": "AnimeDrive-Web/1.0" },
-      signal: AbortSignal.timeout(6000),
+      signal: AbortSignal.timeout(600),
     });
 
     if (res.ok) {

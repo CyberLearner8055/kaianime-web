@@ -74,6 +74,7 @@ export async function fetchAniListMetadata(animeTitle: string): Promise<Enriched
         query: ANILIST_QUERY,
         variables: { search: searchKey },
       }),
+      signal: AbortSignal.timeout(1000),
       next: { revalidate: 86400 }, // Cache metadata for 24 hours
     });
 

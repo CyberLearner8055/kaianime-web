@@ -48,7 +48,7 @@ export interface SiteConfig {
 
 // Dedicated cloud storage endpoint for serverless (Vercel) persistence across all lambdas & users
 const CLOUD_STORAGE_URL = process.env.CLOUD_CONFIG_URL || "https://extendsclass.com/api/json-storage/bin/eccfada";
-const CACHE_TTL_MS = 3000; // 3-second cache TTL for high throughput & instant live propagation
+const CACHE_TTL_MS = 60 * 1000; // 60-second in-memory cache TTL for blazing fast server responses
 
 // In-memory runtime cache
 let runtimeConfig: SiteConfig = JSON.parse(JSON.stringify(defaultConfig)) as SiteConfig;
@@ -67,9 +67,10 @@ export async function loadSiteConfig(force = false): Promise<SiteConfig> {
   // 1. Fetch latest config from persistent Cloud Storage
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 3500);
+    const timeoutId = setTimeout(() => controller.abort(), 1200);
     const res = await fetch(`${CLOUD_STORAGE_URL}?t=${now}`, {
       signal: controller.signal,
+      next: { revalidate: 60, tags: ["site-config"] },
       headers: { "Cache-Control": "no-cache" },
     });
     clearTimeout(timeoutId);
