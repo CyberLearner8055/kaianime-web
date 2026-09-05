@@ -295,7 +295,7 @@ export async function getAppTrendingAnime(): Promise<Anime[]> {
 }
 
 export async function getTrendingAnime(): Promise<Anime[]> {
-  return getAppTrendingAnime();
+  return getSpotlightAnime();
 }
 
 export async function getSpotlightAnime(): Promise<Anime[]> {
