@@ -1,10 +1,13 @@
-﻿import React from "react";
+import React from "react";
 import { Metadata } from "next";
 import { isAdminAuthenticated } from "@/lib/auth";
-import { getSiteConfig } from "@/lib/config";
+import { loadSiteConfig } from "@/lib/config";
 import { fetchAllAnime } from "@/lib/data";
 import AdminLogin from "./AdminLogin";
 import AdminClient from "./AdminClient";
+
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export const metadata: Metadata = {
   title: "Admin Dashboard - KaiAnime",
@@ -22,7 +25,7 @@ export default async function AdminPage() {
     return <AdminLogin />;
   }
 
-  const config = getSiteConfig();
+  const config = await loadSiteConfig(true);
   const allAnime = await fetchAllAnime();
 
   // Create lightweight summary to avoid transmitting huge episode payloads

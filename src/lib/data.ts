@@ -1,5 +1,5 @@
 import { Anime, Episode } from "./types";
-import { getSiteConfig } from "./config";
+import { getSiteConfig, loadSiteConfig } from "./config";
 
 const DATA_URL = "https://raw.githubusercontent.com/CyberLearner8055/appdata/refs/heads/main/anime-data.json";
 const APPSCRIPT_TRENDING_URL =
@@ -42,7 +42,7 @@ export async function fetchAllAnime(): Promise<Anime[]> {
     return memoryCache;
   }
 
-  const siteConfig = getSiteConfig();
+  const siteConfig = await loadSiteConfig();
   const currentDataUrl = siteConfig.dataUrl || DATA_URL;
 
   try {
@@ -258,7 +258,7 @@ export async function getTrendingAnime(): Promise<Anime[]> {
 }
 
 export async function getSpotlightAnime(): Promise<Anime[]> {
-  const config = getSiteConfig();
+  const config = await loadSiteConfig();
   const all = await fetchAllAnime();
 
   if (config.spotlightAnimeSlugs && config.spotlightAnimeSlugs.length > 0) {

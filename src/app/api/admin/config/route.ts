@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { revalidatePath } from 'next/cache';
 import { isAdminAuthenticated } from '@/lib/auth';
-import { getSiteConfig, updateSiteConfig } from '@/lib/config';
+import { loadSiteConfig, updateSiteConfig } from '@/lib/config';
 
 export async function GET() {
   const isAuth = await isAdminAuthenticated();
@@ -9,9 +9,10 @@ export async function GET() {
     return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 });
   }
 
+  const config = await loadSiteConfig(true);
   return NextResponse.json({
     success: true,
-    config: getSiteConfig(),
+    config,
   });
 }
 

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -30,6 +30,9 @@ import {
   Upload,
   RotateCcw,
   Loader2,
+  Clock,
+  Tv,
+  HelpCircle,
 } from "lucide-react";
 import { SiteConfig, HomeSectionConfig } from "@/lib/config";
 
@@ -49,6 +52,18 @@ interface AdminClientProps {
 export default function AdminClient({ initialConfig, allAnime }: AdminClientProps) {
   const router = useRouter();
   const [config, setConfig] = useState<SiteConfig>(initialConfig);
+
+  useEffect(() => {
+    fetch("/api/admin/config")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data?.success && data?.config) {
+          setConfig(data.config);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
   const [activeTab, setActiveTab] = useState<
     "sections" | "spotlight" | "links" | "github" | "announcement" | "overrides" | "settings"
   >("sections");

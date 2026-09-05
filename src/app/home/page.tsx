@@ -15,7 +15,7 @@ import {
   getRomanceAnime,
   toSlimAnime,
 } from "@/lib/data";
-import { getSiteConfig } from "@/lib/config";
+import { loadSiteConfig } from "@/lib/config";
 
 export const metadata: Metadata = {
   title: "KaiAnime - Stream Anime Online in Ultra HD (100% Ad-Free)",
@@ -30,7 +30,7 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 export default async function HomePage() {
-  const siteConfig = getSiteConfig();
+  const siteConfig = await loadSiteConfig();
 
   const [allAnime, spotlights, running, action, isekai, romance] = await Promise.all([
     getAllAnime(),

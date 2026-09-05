@@ -46,10 +46,46 @@ export interface SiteConfig {
   githubToken?: string;
 }
 
-// In-memory runtime cache for instantaneous updates across server components
-let runtimeConfig: SiteConfig = JSON.parse(JSON.stringify(defaultConfig)) as SiteConfig;
+// Dedicated cloud storage endpoint for serverless (Vercel) persistence across all lambdas & users
+const CLOUD_STORAGE_URL = process.env.CLOUD_CONFIG_URL || "https://extendsclass.com/api/json-storage/bin/eccfada";
+const CACHE_TTL_MS = 3000; // 3-second cache TTL for high throughput & instant live propagation
 
-export function getSiteConfig(): SiteConfig {
+// In-memory runtime cache
+let runtimeConfig: SiteConfig = JSON.parse(JSON.stringify(defaultConfig)) as SiteConfig;
+let lastFetchedAt = 0;
+
+/**
+ * Loads site configuration from Cloud Storage, local disk, or fallback memory.
+ * Guarantees cross-instance persistence on Vercel serverless functions.
+ */
+export async function loadSiteConfig(force = false): Promise<SiteConfig> {
+  const now = Date.now();
+  if (!force && lastFetchedAt > 0 && now - lastFetchedAt < CACHE_TTL_MS) {
+    return runtimeConfig;
+  }
+
+  // 1. Fetch latest config from persistent Cloud Storage
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 3500);
+    const res = await fetch(`${CLOUD_STORAGE_URL}?t=${now}`, {
+      signal: controller.signal,
+      headers: { "Cache-Control": "no-cache" },
+    });
+    clearTimeout(timeoutId);
+    if (res.ok) {
+      const cloudData = await res.json();
+      if (cloudData && typeof cloudData === "object" && Array.isArray(cloudData.sectionsOrder)) {
+        runtimeConfig = cloudData as SiteConfig;
+        lastFetchedAt = now;
+        return runtimeConfig;
+      }
+    }
+  } catch (err) {
+    // Non-fatal, proceed to local disk / in-memory fallback
+  }
+
+  // 2. Fallback to local disk (useful in local dev)
   if (typeof window === "undefined") {
     try {
       const req = eval("require");
@@ -59,16 +95,28 @@ export function getSiteConfig(): SiteConfig {
       if (fsModule.existsSync(configPath)) {
         const raw = fsModule.readFileSync(configPath, "utf8");
         runtimeConfig = JSON.parse(raw);
+        lastFetchedAt = now;
       }
     } catch {
       // Fallback to in-memory runtimeConfig
     }
   }
+
   return runtimeConfig;
 }
 
+/**
+ * Synchronous getter returning latest cached configuration.
+ */
+export function getSiteConfig(): SiteConfig {
+  return runtimeConfig;
+}
+
+/**
+ * Updates site configuration and persists it across Cloud Storage, local disk, and GitHub.
+ */
 export async function updateSiteConfig(newConfig: Partial<SiteConfig>): Promise<SiteConfig> {
-  const current = getSiteConfig();
+  const current = await loadSiteConfig(true);
   runtimeConfig = {
     ...current,
     ...newConfig,
@@ -84,9 +132,22 @@ export async function updateSiteConfig(newConfig: Partial<SiteConfig>): Promise<
     spotlightAnimeSlugs: newConfig.spotlightAnimeSlugs ? newConfig.spotlightAnimeSlugs : current.spotlightAnimeSlugs,
     trendingAnimeSlugs: newConfig.trendingAnimeSlugs ? newConfig.trendingAnimeSlugs : current.trendingAnimeSlugs,
     animeOverrides: newConfig.animeOverrides ? newConfig.animeOverrides : current.animeOverrides,
+    githubToken: newConfig.githubToken !== undefined ? newConfig.githubToken : current.githubToken,
   };
+  lastFetchedAt = Date.now();
 
-  // Persist to local disk on server runtime
+  // 1. Persist to Cloud Storage (ensures immediate synchronization across Vercel Lambdas)
+  try {
+    await fetch(CLOUD_STORAGE_URL, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(runtimeConfig),
+    });
+  } catch (err) {
+    console.warn("[SiteConfig] Cloud storage write exception:", err);
+  }
+
+  // 2. Persist to local disk on dev server runtime
   if (typeof window === "undefined") {
     try {
       const req = eval("require");
@@ -94,16 +155,16 @@ export async function updateSiteConfig(newConfig: Partial<SiteConfig>): Promise<
       const pathModule = req("path");
       const configPath = pathModule.join(process.cwd(), "src", "data", "site-config.json");
       fsModule.writeFileSync(configPath, JSON.stringify(runtimeConfig, null, 2), "utf8");
-    } catch (err) {
-      console.warn("[SiteConfig] Disk write exception:", err);
+    } catch {
+      // Ephemeral serverless container (expected on Vercel)
     }
   }
 
-  // Optional: Auto-sync to GitHub repo CyberLearner8055/kaianime-web if GitHub Token is configured
-  const token = newConfig.githubToken || process.env.GITHUB_TOKEN;
+  // 3. Optional: Auto-sync to GitHub repo if GitHub Token is configured
+  const token = runtimeConfig.githubToken || process.env.GITHUB_TOKEN;
   if (token) {
     syncToGitHub(runtimeConfig, token).catch((e) =>
-      console.warn('[SiteConfig] GitHub auto-sync warning:', e)
+      console.warn("[SiteConfig] GitHub auto-sync warning:", e)
     );
   }
 
