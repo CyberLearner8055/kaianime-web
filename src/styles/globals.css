@@ -708,3 +708,35 @@ img {
   transform: translateY(-1px);
 }
 
+/* Mobile ArtPlayer Controls Optimization: Ensure Fullscreen is Always Visible */
+@media (max-width: 640px) {
+  .art-control-volume {
+    display: none !important;
+  }
+  .art-control-fullscreenWeb {
+    display: none !important;
+  }
+  .art-control-aspect-ratio-btn {
+    display: none !important;
+  }
+  .art-control-fullscreen,
+  .art-control-fullscreen-toggle {
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+  }
+  .art-controls-right {
+    gap: 2px !important;
+    display: flex !important;
+    align-items: center !important;
+  }
+  .art-controls-left {
+    gap: 2px !important;
+  }
+  .art-control-time {
+    font-size: 11px !important;
+    padding: 0 4px !important;
+  }
+}
+
+

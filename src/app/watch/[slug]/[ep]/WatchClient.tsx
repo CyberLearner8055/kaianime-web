@@ -309,28 +309,54 @@ export default function WatchClient({ anime, episode, epNumber }: WatchClientPro
 
       {/* Episode Selection Grid */}
       <div className="mt-4 sm:mt-6 p-4 sm:p-5 rounded-xl sm:rounded-2xl bg-[#0a0d14] border border-white/8 mx-3 sm:mx-0">
-        <div className="flex items-center justify-between mb-3 pb-2 border-b border-white/8">
-          <h3 className="font-bold text-sm text-white flex items-center gap-2">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 mb-3 pb-2.5 border-b border-white/8">
+          <h3 className="font-bold text-sm text-white flex items-center gap-2 shrink-0">
             <Layers className="w-4 h-4 text-blue-400" />
             <span>Episodes ({anime.episodesCount})</span>
           </h3>
 
           {/* Season Selector if multiple seasons */}
           {anime.seasons && anime.seasons.length > 1 && (
-            <div className="flex items-center gap-1.5">
-              {anime.seasons.map((s) => (
-                <button
-                  key={s}
-                  onClick={() => setActiveSeason(s)}
-                  className={`px-2.5 py-1 rounded-md text-xs font-bold transition-colors ${
-                    activeSeason === s
-                      ? "bg-blue-600 text-white"
-                      : "bg-white/5 text-slate-400 hover:text-white"
-                  }`}
-                >
-                  Season {s}
-                </button>
-              ))}
+            <div className="flex items-center gap-2 max-w-full overflow-hidden">
+              {anime.seasons.length > 5 ? (
+                /* Compact Clean Dropdown when seasons > 5 */
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-slate-400 font-semibold whitespace-nowrap">Season:</span>
+                  <div className="relative">
+                    <select
+                      value={activeSeason}
+                      onChange={(e) => setActiveSeason(Number(e.target.value))}
+                      className="bg-[#101420] text-white text-xs font-bold px-3 py-1.5 rounded-lg border border-blue-500/40 focus:outline-none focus:border-blue-400 cursor-pointer appearance-none pr-8 shadow-md"
+                    >
+                      {anime.seasons.map((s) => (
+                        <option key={s} value={s} className="bg-[#0a0d14] text-white">
+                          Season {s}
+                        </option>
+                      ))}
+                    </select>
+                    <div className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-[10px]">
+                      ▼
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                /* Horizontal Scrollable Pill Buttons when <= 5 seasons */
+                <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar max-w-full py-0.5">
+                  {anime.seasons.map((s) => (
+                    <button
+                      key={s}
+                      onClick={() => setActiveSeason(s)}
+                      className={`px-3 py-1 rounded-lg text-xs font-bold whitespace-nowrap transition-all shrink-0 ${
+                        activeSeason === s
+                          ? "bg-blue-600 text-white shadow-md shadow-blue-600/30"
+                          : "bg-white/5 text-slate-400 hover:text-white border border-white/5"
+                      }`}
+                    >
+                      Season {s}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </div>

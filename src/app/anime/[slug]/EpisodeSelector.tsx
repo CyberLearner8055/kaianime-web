@@ -62,20 +62,44 @@ export default function EpisodeSelector({
 
       {/* Season Tabs if multiple seasons */}
       {seasons.length > 1 && (
-        <div className="flex flex-wrap gap-2 pt-1">
-          {seasons.map((sNum) => (
-            <button
-              key={sNum}
-              onClick={() => setSelectedSeason(sNum)}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                selectedSeason === sNum
-                  ? "bg-blue-600 text-white shadow-md shadow-blue-600/30 border border-blue-500"
-                  : "bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10"
-              }`}
-            >
-              Season {sNum}
-            </button>
-          ))}
+        <div className="pt-1">
+          {seasons.length > 5 ? (
+            <div className="flex items-center gap-2.5">
+              <span className="text-xs text-slate-400 font-semibold whitespace-nowrap">Select Season:</span>
+              <div className="relative">
+                <select
+                  value={selectedSeason}
+                  onChange={(e) => setSelectedSeason(Number(e.target.value))}
+                  className="bg-[#101420] text-white text-xs font-bold px-3.5 py-1.5 rounded-xl border border-blue-500/40 focus:outline-none focus:border-blue-400 cursor-pointer appearance-none pr-8 shadow-md"
+                >
+                  {seasons.map((sNum) => (
+                    <option key={sNum} value={sNum} className="bg-[#0a0d14] text-white">
+                      Season {sNum}
+                    </option>
+                  ))}
+                </select>
+                <div className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-[10px]">
+                  ▼
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              {seasons.map((sNum) => (
+                <button
+                  key={sNum}
+                  onClick={() => setSelectedSeason(sNum)}
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                    selectedSeason === sNum
+                      ? "bg-blue-600 text-white shadow-md shadow-blue-600/30 border border-blue-500"
+                      : "bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10"
+                  }`}
+                >
+                  Season {sNum}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       )}
 

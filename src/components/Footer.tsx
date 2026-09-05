@@ -6,6 +6,18 @@ export default function Footer() {
   return (
     <footer className="w-full bg-[#050608] border-t border-white/8 pt-10 pb-12 mt-16 text-slate-400 text-xs">
       <div className="max-w-6xl mx-auto px-4 sm:px-6">
+        {/* Brand Logo */}
+        <div className="flex justify-center mb-6">
+          <Link href="/home" className="inline-block">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/logo.png"
+              alt="KaiAnime"
+              className="h-8 sm:h-9 w-auto object-contain opacity-90 hover:opacity-100 transition-opacity"
+            />
+          </Link>
+        </div>
+
         {/* Browse by Letter A-Z */}
         <BrowseByLetter />
 

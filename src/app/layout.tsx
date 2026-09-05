@@ -22,6 +22,14 @@ export const metadata: Metadata = {
     "watch solo leveling hindi",
     "watch jujutsu kaisen hindi",
   ],
+  icons: {
+    icon: [
+      { url: "/favicon.ico" },
+      { url: "/icon.png", type: "image/png" },
+    ],
+    apple: [{ url: "/icon.png" }],
+    shortcut: ["/favicon.ico"],
+  },
   authors: [{ name: "Anime Drive Network", url: "https://animedrive.me" }],
   creator: "Anime Drive",
   publisher: "KaiAnime.site",
@@ -33,10 +41,10 @@ export const metadata: Metadata = {
     siteName: "KaiAnime.site",
     images: [
       {
-        url: "https://animedrive.me/wp-content/uploads/2024/09/cropped-anime-drive-logo.png",
-        width: 1200,
-        height: 630,
-        alt: "KaiAnime Streaming Platform",
+        url: "/logo.png",
+        width: 526,
+        height: 103,
+        alt: "KaiAnime Official Logo",
       },
     ],
     locale: "en_US",
@@ -46,7 +54,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "KaiAnime - Watch Anime Online in Ultra HD (100% Ad-Free)",
     description: "Stream anime in 1080p HD with Hindi Dub and English Subtitles. 100% Ad-Free.",
-    images: ["https://animedrive.me/wp-content/uploads/2024/09/cropped-anime-drive-logo.png"],
+    images: ["/logo.png"],
   },
   robots: {
     index: true,

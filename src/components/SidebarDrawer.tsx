@@ -42,11 +42,13 @@ export default function SidebarDrawer({ isOpen, onClose }: SidebarDrawerProps) {
       <div className={`ak-sidebar-wrapper ${isOpen ? "is-open" : ""}`}>
         {/* Header */}
         <div className="flex items-center justify-between pb-4 border-b border-white/10 mb-4">
-          <Link href="/home" onClick={onClose} className="flex items-center gap-1.5">
-            <span className="text-xl font-black tracking-tight text-white">
-              KAI<span className="text-blue-500">ANIME</span>
-            </span>
-            <span className="text-[10px] text-slate-400 font-bold -ml-0.5">.SITE</span>
+          <Link href="/home" onClick={onClose} className="flex items-center gap-2">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/logo.png"
+              alt="KaiAnime"
+              className="h-8 w-auto max-w-[170px] object-contain"
+            />
           </Link>
           <button
             onClick={onClose}

@@ -30,11 +30,13 @@ export default function MainHeader({ allAnimeIds = [] }: MainHeaderProps) {
             <Menu className="w-6 h-6" />
           </button>
 
-          <Link href="/home" className="flex items-center gap-1.5">
-            <span className="text-xl sm:text-2xl font-black tracking-tight text-white">
-              KAI<span className="text-blue-500">ANIME</span>
-            </span>
-            <span className="text-[10px] text-slate-400 font-bold -ml-0.5">.SITE</span>
+          <Link href="/home" className="flex items-center gap-2">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/logo.png"
+              alt="KaiAnime"
+              className="h-8 sm:h-9 w-auto max-w-[170px] sm:max-w-[210px] object-contain"
+            />
           </Link>
         </div>
 

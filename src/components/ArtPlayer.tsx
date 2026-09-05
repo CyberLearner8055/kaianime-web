@@ -456,7 +456,7 @@ export default function ArtPlayer({
         playbackRate: true,
         aspectRatio: false, // Controlled via in-player button & setting
         fullscreen: true,
-        fullscreenWeb: true,
+        fullscreenWeb: false,
         miniProgressBar: true,
         mutex: true,
         backdrop: true,
@@ -571,6 +571,34 @@ export default function ArtPlayer({
                 artRef.currentTime + 10
               );
               artRef.notice.show = "+10s";
+            },
+          },
+          // Dedicated Fullscreen Button (Guaranteed on Mobile & Desktop)
+          {
+            name: "fullscreen-toggle",
+            position: "right",
+            index: 99,
+            html: `<button class="p-1.5 hover:text-blue-400 transition-colors flex items-center justify-center text-white" title="Fullscreen" aria-label="Fullscreen">
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>
+              </svg>
+            </button>`,
+            click: function (artRef: any) {
+              const video = artRef.template?.$video;
+              if (artRef.fullscreen) {
+                artRef.fullscreen = false;
+              } else {
+                if (
+                  video &&
+                  video.webkitEnterFullscreen &&
+                  typeof video.webkitEnterFullscreen === "function" &&
+                  !document.fullscreenEnabled
+                ) {
+                  video.webkitEnterFullscreen();
+                } else {
+                  artRef.fullscreen = true;
+                }
+              }
             },
           },
         ],

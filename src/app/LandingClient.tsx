@@ -113,11 +113,13 @@ export default function LandingClient({ animeList }: LandingClientProps) {
 
         {/* Hero Section */}
         <header className="landing-hero text-center mb-6">
-          <div className="mb-3 inline-flex items-center justify-center">
-            <span className="text-2xl sm:text-3xl font-black tracking-tight text-white">
-              KAI<span className="text-blue-500">ANIME</span>
-              <span className="text-xs text-slate-400 font-bold ml-1">.SITE</span>
-            </span>
+          <div className="mb-4 inline-flex items-center justify-center">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/logo.png"
+              alt="KaiAnime"
+              className="h-12 sm:h-16 w-auto max-w-[280px] sm:max-w-[340px] object-contain drop-shadow-2xl"
+            />
           </div>
 
           <h1 className="landing-title text-2xl sm:text-4xl md:text-5xl font-black uppercase tracking-tight text-white leading-tight max-w-3xl mx-auto">
