@@ -56,9 +56,13 @@ export default function AllAnimeSection({ initialAnime, allGenres }: AllAnimeSec
     });
   }, [initialAnime, searchQuery, selectedGenre, onlyHindi]);
 
+  const sortedAnime = useMemo(() => {
+    return [...filteredAnime].sort((a, b) => a.title.localeCompare(b.title));
+  }, [filteredAnime]);
+
   const displayedAnime = useMemo(() => {
-    return filteredAnime.slice(0, visibleCount);
-  }, [filteredAnime, visibleCount]);
+    return sortedAnime.slice(0, visibleCount);
+  }, [sortedAnime, visibleCount]);
 
   const handleLoadMore = () => {
     setVisibleCount((prev) => prev + 24);

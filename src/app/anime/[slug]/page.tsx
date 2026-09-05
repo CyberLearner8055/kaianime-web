@@ -272,9 +272,24 @@ export default async function AnimeDetailPage({ params }: PageProps) {
             <div className="w-full mt-6 p-5 rounded-2xl glass-panel space-y-3 text-xs">
               <div className="flex items-center justify-between border-b border-white/5 pb-2.5">
                 <span className="text-slate-400">Status</span>
-                <span className="font-bold text-emerald-400 flex items-center gap-1">
-                  <CheckCircle2 className="w-3.5 h-3.5" /> {anime.status}
-                </span>
+                {(() => {
+                  const displayStatus = enriched?.status
+                    ? enriched.status === "RELEASING"
+                      ? "Ongoing"
+                      : "Completed"
+                    : anime.status;
+                  const isOngoing = displayStatus === "Ongoing";
+                  return (
+                    <span className={`font-bold flex items-center gap-1.5 ${isOngoing ? "text-amber-400" : "text-emerald-400"}`}>
+                      {isOngoing ? (
+                        <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+                      ) : (
+                        <CheckCircle2 className="w-3.5 h-3.5" />
+                      )}
+                      {displayStatus}
+                    </span>
+                  );
+                })()}
               </div>
               <div className="flex items-center justify-between border-b border-white/5 pb-2.5">
                 <span className="text-slate-400">Episodes</span>

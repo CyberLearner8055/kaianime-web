@@ -9,6 +9,8 @@ interface ArtPlayerProps {
   subtitles?: SubtitleTrack[];
   poster?: string;
   title?: string;
+  initialTime?: number;
+  onTimeUpdate?: (currentTime: number, duration: number) => void;
   onEnded?: () => void;
   className?: string;
 }
@@ -18,6 +20,8 @@ export default function ArtPlayer({
   subtitles = [],
   poster,
   title,
+  initialTime,
+  onTimeUpdate,
   onEnded,
   className = "",
 }: ArtPlayerProps) {
@@ -640,6 +644,37 @@ export default function ArtPlayer({
 
       // Aspect Ratio 1-tap Button on Bottom Control Bar
       updateAspectControlBtn(art, "FIT");
+
+      // Auto-Resume playback from saved position
+      if (initialTime && initialTime > 5) {
+        let hasResumed = false;
+        const triggerResume = () => {
+          if (hasResumed) return;
+          try {
+            if (art.currentTime < 5) {
+              art.currentTime = initialTime;
+              hasResumed = true;
+              const mins = Math.floor(initialTime / 60);
+              const secs = Math.floor(initialTime % 60);
+              art.notice.show = `Resumed from ${mins}:${secs < 10 ? "0" : ""}${secs}`;
+            }
+          } catch (_) {}
+        };
+        art.on("ready", triggerResume);
+        art.on("video:canplay", triggerResume);
+      }
+
+      // Track playback progress
+      let lastProgressReport = 0;
+      art.on("video:timeupdate", () => {
+        const now = Date.now();
+        if (now - lastProgressReport > 3000) {
+          lastProgressReport = now;
+          if (onTimeUpdate && art.duration > 0 && art.currentTime > 2) {
+            onTimeUpdate(art.currentTime, art.duration);
+          }
+        }
+      });
 
       // Handle video ended
       art.on("video:ended", () => {

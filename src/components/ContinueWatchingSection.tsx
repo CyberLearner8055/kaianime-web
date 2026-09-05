@@ -9,6 +9,8 @@ interface WatchHistoryItem {
   title: string;
   poster: string;
   episodeNumber: number;
+  currentTime?: number;
+  duration?: number;
   progressPercent?: number;
   timestamp: number;
 }
@@ -61,7 +63,7 @@ export default function ContinueWatchingSection() {
           <Link
             key={item.id}
             href={`/watch/${item.id}/${item.episodeNumber}`}
-            className="group relative rounded-xl overflow-hidden bg-[#0d1017] border border-white/8 hover:border-blue-500/40 transition-all block"
+            className="group relative rounded-xl overflow-hidden bg-[#0d1017] border border-white/8 hover:border-blue-500/40 transition-all block shadow-lg"
           >
             <div className="aspect-[2/3] relative overflow-hidden">
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -78,12 +80,28 @@ export default function ContinueWatchingSection() {
               <span className="absolute top-2 left-2 px-2 py-0.5 rounded bg-black/80 border border-white/10 text-[10px] font-extrabold text-white">
                 Ep {item.episodeNumber}
               </span>
+
+              {/* Progress bar across bottom of thumbnail */}
+              <div className="absolute bottom-0 left-0 right-0 h-1.5 bg-black/80 overflow-hidden">
+                <div
+                  className="h-full bg-red-600 rounded-r-full transition-all duration-300"
+                  style={{ width: `${Math.min(100, Math.max(0, item.progressPercent || 0))}%` }}
+                />
+              </div>
             </div>
 
-            <div className="p-2">
+            <div className="p-2.5">
               <h3 className="text-xs font-bold text-white truncate group-hover:text-blue-400 transition-colors">
                 {item.title}
               </h3>
+              <div className="flex items-center justify-between text-[10px] text-slate-400 mt-1">
+                <span className="font-semibold text-slate-300">EP {item.episodeNumber}</span>
+                {typeof item.progressPercent === "number" && item.progressPercent > 0 ? (
+                  <span className="text-red-400 font-bold">{Math.round(item.progressPercent)}% watched</span>
+                ) : (
+                  <span className="text-blue-400 font-medium">Resume</span>
+                )}
+              </div>
             </div>
           </Link>
         ))}

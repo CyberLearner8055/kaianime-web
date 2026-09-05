@@ -26,6 +26,7 @@ function toSearchAnime(a: any) {
     type: a.type || "TV",
     status: a.status || "Completed",
     episodesCount: a.episodesCount || 1,
+    langs: a.langs || "Hindi, English, Japanese",
     seasons: [],
     episodes: [{ id: `${a.id}-1`, number: 1, title: "Episode 1", servers: {} }],
   };

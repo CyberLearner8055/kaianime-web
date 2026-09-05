@@ -122,7 +122,16 @@ export async function fetchAllAnime(): Promise<Anime[]> {
         poster: item.img || "https://animedrive.me/wp-content/uploads/2024/09/cropped-anime-drive-logo.png",
         banner: item.banner || item.mobileBanner || item.img,
         type: item.type || "Series",
-        status: item.section === "Completed" ? "Completed" : "Ongoing",
+        status:
+          item.status
+            ? item.status === "Ongoing" || item.status === "RELEASING"
+              ? "Ongoing"
+              : "Completed"
+            : item.type === "Movie" || episodes.length === 1
+            ? "Completed"
+            : item.inSlider || item.section === "Ongoing" || item.section === "running"
+            ? "Ongoing"
+            : "Completed",
         rating,
         episodesCount: episodes.length,
         episodes,

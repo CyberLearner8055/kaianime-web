@@ -12,7 +12,10 @@ import {
   AlertCircle,
   Layers,
   Info,
-  Film
+  Film,
+  Share2,
+  Copy,
+  Check,
 } from "lucide-react";
 import { Anime, Episode } from "@/lib/types";
 import ArtPlayer from "@/components/ArtPlayer";
@@ -36,6 +39,9 @@ export default function WatchClient({ anime, episode, epNumber }: WatchClientPro
   const [error, setError] = useState<string | null>(null);
   const [useIframeFallback, setUseIframeFallback] = useState(false);
   const [activeSeason, setActiveSeason] = useState(currentEp?.season || 1);
+  const [initialSeekTime, setInitialSeekTime] = useState<number>(0);
+  const [copied, setCopied] = useState(false);
+  const [shareUrl, setShareUrl] = useState("");
 
   const availableServers: { name: string; url: string }[] = (() => {
     if (!currentEp || !currentEp.servers) return [];
@@ -128,22 +134,85 @@ export default function WatchClient({ anime, episode, epNumber }: WatchClientPro
     };
   }, [rawServerUrl]);
 
-  // Save to Watch History
+  // Set current window share URL
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setShareUrl(window.location.href);
+    }
+  }, []);
+
+  // Retrieve saved playback position to resume
   useEffect(() => {
     try {
+      const saved = localStorage.getItem("kaianime_history");
+      if (saved) {
+        const list = JSON.parse(saved);
+        const found = list.find(
+          (x: any) => x.id === anime.id && x.episodeNumber === epNumber
+        );
+        if (found && found.currentTime && found.currentTime > 5) {
+          if (!found.duration || found.currentTime / found.duration < 0.95) {
+            setInitialSeekTime(found.currentTime);
+          }
+        }
+      }
+    } catch (_) {}
+  }, [anime.id, epNumber]);
+
+  // Track playback position & update history in real time
+  const handleTimeUpdate = (currentTime: number, duration: number) => {
+    try {
+      const progressPercent = duration > 0 ? (currentTime / duration) * 100 : 0;
       const historyItem = {
         id: anime.id,
         title: anime.title,
         poster: anime.poster,
         episodeNumber: epNumber,
+        currentTime: Math.round(currentTime),
+        duration: Math.round(duration),
+        progressPercent: Math.round(progressPercent),
         timestamp: Date.now(),
       };
       const existing = localStorage.getItem("kaianime_history");
       let list = existing ? JSON.parse(existing) : [];
-      list = [historyItem, ...list.filter((x: any) => x.id !== anime.id)].slice(0, 12);
+      list = [historyItem, ...list.filter((x: any) => x.id !== anime.id)].slice(0, 15);
+      localStorage.setItem("kaianime_history", JSON.stringify(list));
+    } catch (_) {}
+  };
+
+  // Save to Watch History on episode mount (preserving prior progress if exists)
+  useEffect(() => {
+    try {
+      const existing = localStorage.getItem("kaianime_history");
+      let list = existing ? JSON.parse(existing) : [];
+      const found = list.find(
+        (x: any) => x.id === anime.id && x.episodeNumber === epNumber
+      );
+      const historyItem = {
+        id: anime.id,
+        title: anime.title,
+        poster: anime.poster,
+        episodeNumber: epNumber,
+        currentTime: found?.currentTime || 0,
+        duration: found?.duration || 0,
+        progressPercent: found?.progressPercent || 0,
+        timestamp: Date.now(),
+      };
+      list = [historyItem, ...list.filter((x: any) => x.id !== anime.id)].slice(0, 15);
       localStorage.setItem("kaianime_history", JSON.stringify(list));
     } catch (_) {}
   }, [anime.id, anime.title, anime.poster, epNumber]);
+
+  const handleCopyLink = async () => {
+    try {
+      const urlToCopy = shareUrl || (typeof window !== "undefined" ? window.location.href : "");
+      if (urlToCopy) {
+        await navigator.clipboard.writeText(urlToCopy);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      }
+    } catch (_) {}
+  };
 
   // Navigate to adjacent episodes
   const prevEp = anime.episodes.find((e) => e.number === epNumber - 1);
@@ -234,6 +303,8 @@ export default function WatchClient({ anime, episode, epNumber }: WatchClientPro
             subtitles={subtitles}
             poster={anime.banner || anime.poster}
             title={`${anime.title} - EP ${epNumber}`}
+            initialTime={initialSeekTime}
+            onTimeUpdate={handleTimeUpdate}
             onEnded={handleVideoEnded}
           />
         ) : (
@@ -304,6 +375,67 @@ export default function WatchClient({ anime, episode, epNumber }: WatchClientPro
               Server {idx + 1}
             </button>
           ))}
+        </div>
+      </div>
+
+      {/* 1-Tap Social Share Bar */}
+      <div className="mt-3 p-3 sm:p-3.5 rounded-xl sm:rounded-2xl bg-[#0a0d14] border border-white/8 flex flex-wrap items-center justify-between gap-3 mx-3 sm:mx-0">
+        <div className="flex items-center gap-2 text-xs font-bold text-slate-300">
+          <Share2 className="w-4 h-4 text-blue-400" />
+          <span>Share this Episode:</span>
+        </div>
+
+        <div className="flex items-center flex-wrap gap-2">
+          {/* WhatsApp 1-Tap Button */}
+          <a
+            href={`https://api.whatsapp.com/send?text=${encodeURIComponent(
+              `Watch ${anime.title} Episode ${epNumber} Hindi Dubbed Free in Full HD:\n${shareUrl || "https://kaianime.site"}`
+            )}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 hover:text-emerald-300 border border-emerald-500/30 text-xs font-bold transition-all active:scale-95 shadow-sm"
+            title="Share on WhatsApp"
+          >
+            <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
+              <path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.816 9.816 0 0 0 12.04 2zm.01 1.67c2.2 0 4.26.86 5.82 2.42a8.225 8.225 0 0 1 2.41 5.83c0 4.54-3.7 8.24-8.24 8.24-1.48 0-2.93-.4-4.2-1.15l-.3-.18-3.12.82.83-3.04-.2-.31a8.196 8.196 0 0 1-1.26-4.38c0-4.54 3.7-8.24 8.24-8.24zm4.52 11.66c-.25-.13-1.47-.72-1.7-.81-.23-.08-.39-.13-.56.13-.17.25-.64.81-.79.97-.14.17-.29.19-.54.06-.25-.13-1.06-.39-2.03-1.25-.75-.67-1.26-1.5-1.41-1.75-.15-.25-.02-.39.11-.51.11-.11.25-.29.37-.44.13-.14.17-.25.25-.42.08-.17.04-.31-.02-.44-.06-.13-.56-1.34-.76-1.84-.2-.49-.4-.42-.56-.43h-.47c-.17 0-.44.06-.67.31-.23.25-.88.86-.88 2.1 0 1.24.9 2.44 1.03 2.61.13.17 1.78 2.71 4.3 3.8.6.26 1.07.41 1.44.53.6.19 1.15.16 1.58.1.48-.07 1.47-.6 1.68-1.18.21-.58.21-1.07.15-1.18-.06-.11-.22-.17-.47-.3z"/>
+            </svg>
+            <span>WhatsApp</span>
+          </a>
+
+          {/* Telegram 1-Tap Button */}
+          <a
+            href={`https://t.me/share/url?url=${encodeURIComponent(shareUrl || "https://kaianime.site")}&text=${encodeURIComponent(
+              `Watch ${anime.title} Episode ${epNumber} Hindi Dubbed Free in Full HD on KaiAnime!`
+            )}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-sky-500/20 hover:bg-sky-500/30 text-sky-400 hover:text-sky-300 border border-sky-400/30 text-xs font-bold transition-all active:scale-95 shadow-sm"
+            title="Share on Telegram"
+          >
+            <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 0 0-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.36.75-.55 2.92-1.27 4.86-2.11 5.83-2.51 2.78-1.16 3.35-1.36 3.73-1.36.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06.01.24 0 .38z"/>
+            </svg>
+            <span>Telegram</span>
+          </a>
+
+          {/* Copy Link Button */}
+          <button
+            onClick={handleCopyLink}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white border border-white/10 text-xs font-bold transition-all active:scale-95"
+            title="Copy Link"
+          >
+            {copied ? (
+              <>
+                <Check className="w-3.5 h-3.5 text-emerald-400" />
+                <span className="text-emerald-400">Copied!</span>
+              </>
+            ) : (
+              <>
+                <Copy className="w-3.5 h-3.5 text-slate-400" />
+                <span>Copy Link</span>
+              </>
+            )}
+          </button>
         </div>
       </div>
 

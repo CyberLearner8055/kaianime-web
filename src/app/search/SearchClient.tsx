@@ -18,6 +18,7 @@ export default function SearchClient({ initialAnime, allGenres }: SearchClientPr
   const queryParam = searchParams.get("q") || "";
   const genreParam = searchParams.get("genre") || "";
   const filterParam = searchParams.get("filter") || "";
+  const langParam = (searchParams.get("lang") || "").toLowerCase().trim();
   const pageParam = parseInt(searchParams.get("page") || "1", 10);
   const currentPage = isNaN(pageParam) || pageParam < 1 ? 1 : pageParam;
 
@@ -25,7 +26,7 @@ export default function SearchClient({ initialAnime, allGenres }: SearchClientPr
   const [selectedGenre, setSelectedGenre] = useState<string>(genreParam);
   const [onlyHindi, setOnlyHindi] = useState<boolean>(filterParam === "hindi");
   const [sortBy, setSortBy] = useState<"rating" | "latest" | "title">(
-    filterParam === "top" ? "rating" : "latest"
+    filterParam === "top" ? "rating" : "title"
   );
 
   const ITEMS_PER_PAGE = 24;
@@ -33,6 +34,20 @@ export default function SearchClient({ initialAnime, allGenres }: SearchClientPr
   const filteredAnime = useMemo(() => {
     return initialAnime
       .filter((anime) => {
+        // Language filter from Sidebar
+        if (langParam) {
+          // If Hindi, English, or Japanese: show all anime as virtually all titles support these
+          if (langParam === "hindi" || langParam === "english" || langParam === "japanese") {
+            // Match all
+          } else {
+            // Specific regional or foreign languages: Tamil, Telugu, Kannada, Malayalam, Bengali, Korean, Chinese, Marathi
+            const animeLangs = (anime.langs || "").toLowerCase();
+            if (!animeLangs.includes(langParam)) {
+              return false;
+            }
+          }
+        }
+
         // Query filter
         if (query.trim()) {
           const q = query.toLowerCase().trim();
@@ -62,7 +77,7 @@ export default function SearchClient({ initialAnime, allGenres }: SearchClientPr
         if (sortBy === "title") return a.title.localeCompare(b.title);
         return 0; // default order from data
       });
-  }, [initialAnime, query, selectedGenre, onlyHindi, sortBy]);
+  }, [initialAnime, langParam, query, selectedGenre, onlyHindi, sortBy]);
 
   const totalItems = filteredAnime.length;
   const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE) || 1;
@@ -145,6 +160,18 @@ export default function SearchClient({ initialAnime, allGenres }: SearchClientPr
               <Mic className="w-3.5 h-3.5" />
               <span>Hindi Dub Only</span>
             </button>
+
+            {/* Active Language Badge if selected from Sidebar */}
+            {langParam && (
+              <Link
+                href="/search"
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 hover:bg-amber-500/30 transition-all"
+                title="Clear Language Filter"
+              >
+                <span className="capitalize">{langParam} Audio</span>
+                <X className="w-3.5 h-3.5 ml-0.5" />
+              </Link>
+            )}
 
             {/* Sort options */}
             <div className="flex items-center gap-1 bg-white/5 p-1 rounded-xl border border-white/10 text-xs font-medium">
