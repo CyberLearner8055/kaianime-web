@@ -50,28 +50,6 @@ export interface SiteConfig {
 let runtimeConfig: SiteConfig = JSON.parse(JSON.stringify(defaultConfig)) as SiteConfig;
 
 export function getSiteConfig(): SiteConfig {
-  return runtimeConfig;
-}
-
-export async function updateSiteConfig(newConfig: Partial<SiteConfig>): Promise<SiteConfig> {
-  runtimeConfig = {
-    ...runtimeConfig,
-    ...newConfig,
-    links: {
-      ...runtimeConfig.links,
-      ...(newConfig.links || {}),
-    },
-    announcement: {
-      ...runtimeConfig.announcement,
-      ...(newConfig.announcement || {}),
-    },
-    sectionsOrder: newConfig.sectionsOrder ? newConfig.sectionsOrder : runtimeConfig.sectionsOrder,
-    spotlightAnimeSlugs: newConfig.spotlightAnimeSlugs ? newConfig.spotlightAnimeSlugs : runtimeConfig.spotlightAnimeSlugs,
-    trendingAnimeSlugs: newConfig.trendingAnimeSlugs ? newConfig.trendingAnimeSlugs : runtimeConfig.trendingAnimeSlugs,
-    animeOverrides: newConfig.animeOverrides ? newConfig.animeOverrides : runtimeConfig.animeOverrides,
-  };
-
-  // Try persisting to local disk on server runtime
   if (typeof window === "undefined") {
     try {
       const req = eval("require");
@@ -79,10 +57,45 @@ export async function updateSiteConfig(newConfig: Partial<SiteConfig>): Promise<
       const pathModule = req("path");
       const configPath = pathModule.join(process.cwd(), "src", "data", "site-config.json");
       if (fsModule.existsSync(configPath)) {
-        fsModule.writeFileSync(configPath, JSON.stringify(runtimeConfig, null, 2), "utf8");
+        const raw = fsModule.readFileSync(configPath, "utf8");
+        runtimeConfig = JSON.parse(raw);
       }
     } catch {
-      // Ephemeral serverless container
+      // Fallback to in-memory runtimeConfig
+    }
+  }
+  return runtimeConfig;
+}
+
+export async function updateSiteConfig(newConfig: Partial<SiteConfig>): Promise<SiteConfig> {
+  const current = getSiteConfig();
+  runtimeConfig = {
+    ...current,
+    ...newConfig,
+    links: {
+      ...current.links,
+      ...(newConfig.links || {}),
+    },
+    announcement: {
+      ...current.announcement,
+      ...(newConfig.announcement || {}),
+    },
+    sectionsOrder: newConfig.sectionsOrder ? newConfig.sectionsOrder : current.sectionsOrder,
+    spotlightAnimeSlugs: newConfig.spotlightAnimeSlugs ? newConfig.spotlightAnimeSlugs : current.spotlightAnimeSlugs,
+    trendingAnimeSlugs: newConfig.trendingAnimeSlugs ? newConfig.trendingAnimeSlugs : current.trendingAnimeSlugs,
+    animeOverrides: newConfig.animeOverrides ? newConfig.animeOverrides : current.animeOverrides,
+  };
+
+  // Persist to local disk on server runtime
+  if (typeof window === "undefined") {
+    try {
+      const req = eval("require");
+      const fsModule = req("fs");
+      const pathModule = req("path");
+      const configPath = pathModule.join(process.cwd(), "src", "data", "site-config.json");
+      fsModule.writeFileSync(configPath, JSON.stringify(runtimeConfig, null, 2), "utf8");
+    } catch (err) {
+      console.warn("[SiteConfig] Disk write exception:", err);
     }
   }
 

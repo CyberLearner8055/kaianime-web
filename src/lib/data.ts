@@ -277,14 +277,6 @@ export async function getSpotlightAnime(): Promise<Anime[]> {
       }
     }
     if (curated.length > 0) {
-      // Fill remaining from trending if needed
-      const trending = await getAppTrendingAnime();
-      for (const t of trending) {
-        if (curated.length >= 8) break;
-        if (!curated.some((c) => c.id === t.id)) {
-          curated.push(t);
-        }
-      }
       return curated;
     }
   }

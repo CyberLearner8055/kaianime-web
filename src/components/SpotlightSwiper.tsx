@@ -23,10 +23,8 @@ export default function SpotlightSwiper({ spotlights }: SpotlightSwiperProps) {
     image: "https://images.unsplash.com/photo-1578632767115-351597cf2477?w=1200&auto=format&fit=crop&q=80",
   };
 
-  const slides: any[] = [
-    promoSlide,
-    ...spotlights.slice(0, 7).map((a) => ({ isPromo: false, anime: a }))
-  ];
+  const animeSlides = spotlights.map((a) => ({ isPromo: false, anime: a }));
+  const slides: any[] = animeSlides.length > 0 ? animeSlides : [promoSlide];
 
   useEffect(() => {
     if (slides.length <= 1) return;

@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { revalidatePath } from 'next/cache';
 import { isAdminAuthenticated } from '@/lib/auth';
 import { getSiteConfig, updateSiteConfig } from '@/lib/config';
 
@@ -23,6 +24,15 @@ export async function POST(req: Request) {
   try {
     const body = await req.json();
     const updated = await updateSiteConfig(body);
+
+    try {
+      revalidatePath('/home');
+      revalidatePath('/');
+      revalidatePath('/ad-admin');
+    } catch (e) {
+      console.warn('revalidatePath warning:', e);
+    }
+
     return NextResponse.json({
       success: true,
       message: 'Site configuration updated successfully',

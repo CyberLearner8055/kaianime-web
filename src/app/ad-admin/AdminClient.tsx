@@ -69,22 +69,26 @@ export default function AdminClient({ initialConfig, allAnime }: AdminClientProp
   const [overrideSearch, setOverrideSearch] = useState("");
   const [selectedOverrideAnimeId, setSelectedOverrideAnimeId] = useState<string | null>(null);
 
-  const handleSave = async () => {
+  const handleSave = async (overrideCfg?: SiteConfig | unknown) => {
+    const configToSave =
+      overrideCfg && typeof overrideCfg === "object" && "siteName" in overrideCfg
+        ? (overrideCfg as SiteConfig)
+        : config;
     setSaving(true);
     setSaveMessage(null);
     try {
       const res = await fetch("/api/admin/config", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(config),
+        body: JSON.stringify(configToSave),
       });
       const data = await res.json();
       if (!res.ok || !data.success) {
         throw new Error(data.message || "Failed to save configuration");
       }
       setConfig(data.config);
-      setSaveMessage("Configuration saved successfully!");
-      setTimeout(() => setSaveMessage(null), 4000);
+      setSaveMessage("Saved & Live on Site!");
+      setTimeout(() => setSaveMessage(null), 3000);
     } catch (err: any) {
       alert("Error saving: " + err.message);
     } finally {
@@ -135,14 +139,18 @@ export default function AdminClient({ initialConfig, allAnime }: AdminClientProp
       s.order = idx + 1;
     });
 
-    setConfig({ ...config, sectionsOrder: newSections });
+    const updated = { ...config, sectionsOrder: newSections };
+    setConfig(updated);
+    handleSave(updated);
   };
 
   const toggleSection = (id: string) => {
     const newSections = config.sectionsOrder.map((s) =>
       s.id === id ? { ...s, enabled: !s.enabled } : s
     );
-    setConfig({ ...config, sectionsOrder: newSections });
+    const updated = { ...config, sectionsOrder: newSections };
+    setConfig(updated);
+    handleSave(updated);
   };
 
   const updateSectionField = (
@@ -252,7 +260,7 @@ export default function AdminClient({ initialConfig, allAnime }: AdminClientProp
           </Link>
 
           <button
-            onClick={handleSave}
+            onClick={() => handleSave()}
             disabled={saving}
             className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs shadow-lg shadow-blue-600/25 transition-all disabled:opacity-50 cursor-pointer"
           >
@@ -539,7 +547,9 @@ export default function AdminClient({ initialConfig, allAnime }: AdminClientProp
                                 const temp = list[idx];
                                 list[idx] = list[idx - 1];
                                 list[idx - 1] = temp;
-                                setConfig({ ...config, spotlightAnimeSlugs: list });
+                                const updated = { ...config, spotlightAnimeSlugs: list };
+                                setConfig(updated);
+                                handleSave(updated);
                               }}
                               disabled={idx === 0}
                               className="p-1 rounded bg-white/5 hover:bg-white/10 disabled:opacity-20 text-slate-300"
@@ -554,7 +564,9 @@ export default function AdminClient({ initialConfig, allAnime }: AdminClientProp
                                 const temp = list[idx];
                                 list[idx] = list[idx + 1];
                                 list[idx + 1] = temp;
-                                setConfig({ ...config, spotlightAnimeSlugs: list });
+                                const updated = { ...config, spotlightAnimeSlugs: list };
+                                setConfig(updated);
+                                handleSave(updated);
                               }}
                               disabled={idx === config.spotlightAnimeSlugs.length - 1}
                               className="p-1 rounded bg-white/5 hover:bg-white/10 disabled:opacity-20 text-slate-300"
@@ -567,7 +579,9 @@ export default function AdminClient({ initialConfig, allAnime }: AdminClientProp
                           <button
                             onClick={() => {
                               const list = config.spotlightAnimeSlugs.filter((s) => s !== slug);
-                              setConfig({ ...config, spotlightAnimeSlugs: list });
+                              const updated = { ...config, spotlightAnimeSlugs: list };
+                              setConfig(updated);
+                              handleSave(updated);
                             }}
                             className="p-1 rounded bg-rose-500/10 hover:bg-rose-500/20 text-rose-400"
                             title="Remove"
@@ -619,10 +633,12 @@ export default function AdminClient({ initialConfig, allAnime }: AdminClientProp
                         <button
                           onClick={() => {
                             if (!config.spotlightAnimeSlugs.includes(anime.id)) {
-                              setConfig({
+                              const updated = {
                                 ...config,
                                 spotlightAnimeSlugs: [...config.spotlightAnimeSlugs, anime.id],
-                              });
+                              };
+                              setConfig(updated);
+                              handleSave(updated);
                             }
                             setSpotlightSearch("");
                           }}
