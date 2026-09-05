@@ -27,32 +27,32 @@ const languageCards = [
   {
     name: "Hindi",
     query: "hindi",
-    image: "https://images.unsplash.com/photo-1578632767115-351597cf2477?w=600&auto=format&fit=crop&q=80",
+    image: "/languages/hindi.jpg",
   },
   {
     name: "Tamil",
     query: "tamil",
-    image: "https://images.unsplash.com/photo-1534447677768-be436bb09401?w=600&auto=format&fit=crop&q=80",
+    image: "/languages/tamil.jpg",
   },
   {
     name: "Telugu",
     query: "telugu",
-    image: "https://images.unsplash.com/photo-1563089145-599997674d42?w=600&auto=format&fit=crop&q=80",
+    image: "/languages/telugu.jpg",
   },
   {
     name: "Bengali",
     query: "bengali",
-    image: "https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=600&auto=format&fit=crop&q=80",
+    image: "/languages/bengali.jpg",
   },
   {
     name: "Malayalam",
     query: "malayalam",
-    image: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=600&auto=format&fit=crop&q=80",
+    image: "/languages/malayalam.jpg",
   },
   {
     name: "English",
     query: "english",
-    image: "https://images.unsplash.com/photo-1541562232579-512a21360020?w=600&auto=format&fit=crop&q=80",
+    image: "/languages/english.jpg",
   },
 ];
 
