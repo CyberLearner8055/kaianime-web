@@ -1,0 +1,114 @@
+{
+  "siteName": "KaiAnime",
+  "siteDescription": "Stream your favorite anime in Hindi, Tamil, Telugu & English with multi-audio, high-speed servers, and 100% ad-free experience.",
+  "dataUrl": "https://raw.githubusercontent.com/CyberLearner8055/appdata/refs/heads/main/anime-data.json",
+  "links": {
+    "animedriveUrl": "https://animedrive.me",
+    "apkDownloadUrl": "https://animedrive.me/download",
+    "fallbackStreamUrl": "https://embedwish.com",
+    "telegramUrl": "https://t.me/animedrive",
+    "whatsappUrl": "https://whatsapp.com/channel/animedrive",
+    "discordUrl": "https://discord.gg/animedrive"
+  },
+  "sectionsOrder": [
+    {
+      "id": "spotlight",
+      "type": "spotlight",
+      "title": "Spotlight Hero Slider",
+      "subtitle": "Featured Anime & AnimeDrive Highlights",
+      "enabled": true,
+      "order": 1,
+      "limit": 8
+    },
+    {
+      "id": "running",
+      "type": "rail",
+      "title": "⚡ Airing Now (Running Anime)",
+      "subtitle": "Latest episodes updated daily directly from Anime Drive App",
+      "enabled": true,
+      "order": 2,
+      "limit": 18
+    },
+    {
+      "id": "continue_watching",
+      "type": "continue_watching",
+      "title": "🕒 Continue Watching",
+      "subtitle": "Resume your playback where you left off",
+      "enabled": true,
+      "order": 3,
+      "limit": 10
+    },
+    {
+      "id": "action",
+      "type": "rail",
+      "title": "⚔️ Action Anime",
+      "subtitle": "High-octane fights and shonen adventures",
+      "enabled": true,
+      "order": 4,
+      "limit": 18
+    },
+    {
+      "id": "isekai",
+      "type": "rail",
+      "title": "🌀 Isekai & Fantasy Anime",
+      "subtitle": "Reincarnation, magical realms & fantasy worlds",
+      "enabled": true,
+      "order": 5,
+      "limit": 18
+    },
+    {
+      "id": "romance",
+      "type": "rail",
+      "title": "💖 Romance Anime",
+      "subtitle": "Heartwarming love stories, drama & slice of life",
+      "enabled": true,
+      "order": 6,
+      "limit": 18
+    },
+    {
+      "id": "latest_episodes",
+      "type": "latest_episodes",
+      "title": "📺 Latest Episodes",
+      "subtitle": "All, Series and Movie releases",
+      "enabled": true,
+      "order": 7,
+      "limit": 24
+    },
+    {
+      "id": "top_10",
+      "type": "top_10",
+      "title": "🏆 Top 10 Anime in India",
+      "subtitle": "Most popular watched anime this month",
+      "enabled": true,
+      "order": 8,
+      "limit": 10
+    },
+    {
+      "id": "app_promo",
+      "type": "app_promo",
+      "title": "📱 Anime Drive App Promo",
+      "subtitle": "Download official Android app banner",
+      "enabled": true,
+      "order": 9,
+      "limit": 1
+    }
+  ],
+  "spotlightAnimeSlugs": [
+    "solo-leveling-season-2-arise-from-the-shadows",
+    "jujutsu-kaisen-season-2",
+    "demon-slayer-kimetsu-no-yaiba-hashira-training-arc",
+    "one-piece",
+    "naruto-shippuden",
+    "attack-on-titan-final-season",
+    "bleach-thousand-year-blood-war"
+  ],
+  "trendingAnimeSlugs": [],
+  "announcement": {
+    "enabled": false,
+    "text": "🎉 Welcome to KaiAnime - 100% Ad-Free Streaming Partner of AnimeDrive.me!",
+    "badge": "ANNOUNCEMENT",
+    "link": "/home",
+    "theme": "blue"
+  },
+  "animeOverrides": {}
+}

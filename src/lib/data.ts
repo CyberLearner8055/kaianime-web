@@ -1,4 +1,5 @@
 import { Anime, Episode } from "./types";
+import { getSiteConfig } from "./config";
 
 const DATA_URL = "https://raw.githubusercontent.com/CyberLearner8055/appdata/refs/heads/main/anime-data.json";
 const APPSCRIPT_TRENDING_URL =
@@ -11,6 +12,15 @@ const CACHE_TTL = 300 * 1000; // 5 minutes
 
 let trendingCache: Anime[] | null = null;
 let lastTrendingFetch = 0;
+
+export function purgeAnimeDataCache(): void {
+  memoryCache = null;
+  lastFetchTime = 0;
+  trendingCache = null;
+  lastTrendingFetch = 0;
+  runningCache = null;
+  lastRunningFetch = 0;
+}
 
 export function slugify(text: string): string {
   return text
@@ -32,8 +42,11 @@ export async function fetchAllAnime(): Promise<Anime[]> {
     return memoryCache;
   }
 
+  const siteConfig = getSiteConfig();
+  const currentDataUrl = siteConfig.dataUrl || DATA_URL;
+
   try {
-    const res = await fetch(DATA_URL, {
+    const res = await fetch(currentDataUrl, {
       cache: "no-store",
       headers: {
         "Accept": "application/json",
@@ -123,7 +136,9 @@ export async function fetchAllAnime(): Promise<Anime[]> {
         banner: item.banner || item.mobileBanner || item.img,
         type: item.type || "Series",
         status:
-          item.status
+          siteConfig.animeOverrides?.[cleanSlug]?.status ||
+          siteConfig.animeOverrides?.[rawId]?.status ||
+          (item.status
             ? item.status === "Ongoing" || item.status === "RELEASING"
               ? "Ongoing"
               : "Completed"
@@ -131,14 +146,20 @@ export async function fetchAllAnime(): Promise<Anime[]> {
             ? "Completed"
             : item.inSlider || item.section === "Ongoing" || item.section === "running"
             ? "Ongoing"
-            : "Completed",
+            : "Completed"),
         rating,
         episodesCount: episodes.length,
         episodes,
         seasons: availableSeasons,
         isHindiDubbed: true,
         isTrending: Boolean(item.inSlider),
-        isPopular: Boolean(item.section === "Popular" || item.inSlider || rating >= 8.5),
+        isPopular: Boolean(
+          siteConfig.animeOverrides?.[cleanSlug]?.isPinned ||
+          siteConfig.animeOverrides?.[rawId]?.isPinned ||
+          item.section === "Popular" ||
+          item.inSlider ||
+          rating >= 8.5
+        ),
         year: item.year || "2024",
         quality: item.quality || "1080p FHD",
         langs: rawLangs,
@@ -233,6 +254,41 @@ export async function getAppTrendingAnime(): Promise<Anime[]> {
 }
 
 export async function getTrendingAnime(): Promise<Anime[]> {
+  return getAppTrendingAnime();
+}
+
+export async function getSpotlightAnime(): Promise<Anime[]> {
+  const config = getSiteConfig();
+  const all = await fetchAllAnime();
+
+  if (config.spotlightAnimeSlugs && config.spotlightAnimeSlugs.length > 0) {
+    const curated: Anime[] = [];
+    for (const slug of config.spotlightAnimeSlugs) {
+      const target = slug.toLowerCase().trim();
+      const found = all.find(
+        (a) =>
+          a.id.toLowerCase() === target ||
+          (a.originalId && a.originalId.toLowerCase() === target) ||
+          slugify(a.title) === target ||
+          a.title.toLowerCase() === target
+      );
+      if (found && !curated.some((c) => c.id === found.id)) {
+        curated.push(found);
+      }
+    }
+    if (curated.length > 0) {
+      // Fill remaining from trending if needed
+      const trending = await getAppTrendingAnime();
+      for (const t of trending) {
+        if (curated.length >= 8) break;
+        if (!curated.some((c) => c.id === t.id)) {
+          curated.push(t);
+        }
+      }
+      return curated;
+    }
+  }
+
   return getAppTrendingAnime();
 }
 

@@ -12,8 +12,9 @@ interface AppLayoutWrapperProps {
 export default function AppLayoutWrapper({ children }: AppLayoutWrapperProps) {
   const pathname = usePathname();
   const isLandingPage = pathname === "/";
+  const isAdminPage = pathname.startsWith("/ad-admin");
 
-  if (isLandingPage) {
+  if (isLandingPage || isAdminPage) {
     return <>{children}</>;
   }
 

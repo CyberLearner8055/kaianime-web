@@ -1,8 +1,12 @@
 import React from "react";
 import Link from "next/link";
 import BrowseByLetter from "./BrowseByLetter";
+import { getSiteConfig } from "@/lib/config";
 
 export default function Footer() {
+  const siteConfig = getSiteConfig();
+  const animedriveUrl = siteConfig.links?.animedriveUrl || "https://animedrive.me";
+
   return (
     <footer className="w-full bg-[#050608] border-t border-white/8 pt-10 pb-12 mt-16 text-slate-400 text-xs">
       <div className="max-w-6xl mx-auto px-4 sm:px-6">
@@ -69,7 +73,7 @@ export default function Footer() {
           <p className="text-xs sm:text-sm text-slate-300 font-medium">
             <span className="text-white font-bold">KaiAnime</span> is the dedicated ad-free streaming platform of{" "}
             <a
-              href="https://animedrive.me"
+              href={animedriveUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="text-blue-400 hover:text-blue-300 font-extrabold underline decoration-blue-500/50 underline-offset-4 hover:decoration-blue-400 transition-colors"
@@ -81,7 +85,7 @@ export default function Footer() {
 
         {/* Copyright */}
         <div className="text-center pt-2 text-slate-400 text-xs">
-          <p>© 2026 <span className="text-white font-bold">KaiAnime</span> &bull; Part of <a href="https://animedrive.me" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline font-semibold">AnimeDrive.me</a> Network.</p>
+          <p>© 2026 <span className="text-white font-bold">KaiAnime</span> &bull; Part of <a href={animedriveUrl} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline font-semibold">AnimeDrive.me</a> Network.</p>
         </div>
       </div>
     </footer>
