@@ -103,7 +103,36 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    // Binary chunks (TS, MP4, WebVTT)
+    // Subtitles (WebVTT, SRT) - Normalize and ensure proper text/vtt headers
+    const isVtt =
+      targetUrl.toLowerCase().includes(".vtt") ||
+      contentType.includes("vtt") ||
+      contentType.includes("subtitles");
+    const isSrt =
+      targetUrl.toLowerCase().includes(".srt") ||
+      contentType.includes("srt");
+
+    if (isVtt || isSrt) {
+      let vttText = await response.text();
+      // Ensure proper WEBVTT header and formatting
+      if (isSrt || !vttText.trim().startsWith("WEBVTT")) {
+        // Convert SRT commas (00:01:23,456) to WebVTT periods (00:01:23.456)
+        const formatted = vttText.replace(/(\d{2}:\d{2}:\d{2}),(\d{3})/g, "$1.$2");
+        vttText = `WEBVTT\n\n${formatted.trim()}`;
+      }
+
+      return new NextResponse(vttText, {
+        status: 200,
+        headers: {
+          "Content-Type": "text/vtt; charset=utf-8",
+          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Methods": "GET, HEAD, OPTIONS",
+          "Cache-Control": "public, max-age=86400, stale-while-revalidate=604800",
+        },
+      });
+    }
+
+    // Binary chunks (TS, MP4)
     const body = response.body;
     const responseHeaders: Record<string, string> = {
       "Content-Type": contentType,

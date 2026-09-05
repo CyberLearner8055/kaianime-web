@@ -336,7 +336,7 @@ export default function WatchClient({ anime, episode, epNumber }: WatchClientPro
           </div>
         ) : streamUrl ? (
           <ArtPlayer
-            key={streamUrl}
+            key={`${streamUrl}-${subtitles.length}`}
             url={streamUrl}
             subtitles={subtitles}
             poster={anime.banner || anime.poster}

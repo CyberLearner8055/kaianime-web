@@ -41,6 +41,22 @@ async function handleExtract(serverUrl: string | null) {
       data.url
     )}&referer=${encodeURIComponent(refererParam)}&origin=${encodeURIComponent(originParam)}`;
 
+    // Proxy every subtitle track through /api/proxy to guarantee 100% CORS and referer bypass
+    const proxiedSubtitles = (data.subtitles || []).map((sub) => {
+      const originalFile = sub.file || "";
+      const isExternal =
+        originalFile.startsWith("http://") || originalFile.startsWith("https://");
+      const proxiedFile = isExternal
+        ? `/api/proxy?url=${encodeURIComponent(originalFile)}&referer=${encodeURIComponent(
+            refererParam
+          )}&origin=${encodeURIComponent(originParam)}`
+        : originalFile;
+      return {
+        ...sub,
+        file: proxiedFile,
+      };
+    });
+
     return NextResponse.json(
       {
         success: true,
@@ -48,7 +64,7 @@ async function handleExtract(serverUrl: string | null) {
         directM3u8: data.url,
         streamUrl: proxiedStreamUrl,
         url: proxiedStreamUrl,
-        subtitles: data.subtitles || [],
+        subtitles: proxiedSubtitles,
         isHls: data.isHls ?? true,
         referer: refererParam,
         origin: originParam,

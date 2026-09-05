@@ -16,6 +16,68 @@ interface ArtPlayerProps {
   className?: string;
 }
 
+interface ParsedCue {
+  start: number;
+  end: number;
+  textHtml: string;
+}
+
+function parseVTTTime(str: string): number {
+  if (!str) return 0;
+  const clean = str.trim().split(/\s+/)[0].replace(",", ".");
+  const parts = clean.split(":");
+  if (parts.length === 3) {
+    return (
+      parseFloat(parts[0]) * 3600 +
+      parseFloat(parts[1]) * 60 +
+      parseFloat(parts[2])
+    );
+  } else if (parts.length === 2) {
+    return parseFloat(parts[0]) * 60 + parseFloat(parts[1]);
+  }
+  return parseFloat(parts[0]) || 0;
+}
+
+function parseVTTText(vtt: string): ParsedCue[] {
+  if (!vtt) return [];
+  const lines = vtt.replace(/\r\n/g, "\n").replace(/\r/g, "\n").split("\n");
+  const cues: ParsedCue[] = [];
+  let i = 0;
+  while (i < lines.length) {
+    const line = lines[i].trim();
+    if (line.includes("-->")) {
+      const [startStr, endStr] = line.split("-->");
+      const start = parseVTTTime(startStr);
+      const end = parseVTTTime(endStr);
+      i++;
+      const textLines: string[] = [];
+      while (i < lines.length && lines[i].trim() !== "") {
+        const rawLine = lines[i].trim();
+        const clean = rawLine.replace(/<[^>]+>/g, "").trim();
+        if (clean.length > 0) {
+          textLines.push(clean);
+        }
+        i++;
+      }
+      if (start !== null && end !== null && textLines.length > 0 && end > start) {
+        cues.push({
+          start,
+          end,
+          textHtml: textLines
+            .map(
+              (l) =>
+                `<div class="art-subtitle-line" style="margin-bottom:2px;">${l}</div>`
+            )
+            .join(""),
+        });
+      }
+    } else {
+      i++;
+    }
+  }
+  return cues;
+}
+
 export default function ArtPlayer({
   url,
   subtitles = [],
@@ -295,6 +357,146 @@ export default function ArtPlayer({
       } catch (_) {}
     };
 
+    let activeCues: ParsedCue[] = [];
+    let currentSubtitleUrl: string | null = null;
+
+    const renderSubtitleAtTime = (artRef: any, currentTime: number) => {
+      if (!artRef || !artRef.template) return;
+      const subContainer = artRef.template.$subtitle;
+      if (!subContainer) return;
+
+      if (activeSubLabel === "Off" || activeCues.length === 0) {
+        if (subContainer.innerHTML !== "") {
+          subContainer.innerHTML = "";
+        }
+        return;
+      }
+
+      const match = activeCues.find(
+        (c) => currentTime >= c.start && currentTime <= c.end
+      );
+
+      if (match) {
+        if (subContainer.innerHTML !== match.textHtml) {
+          subContainer.innerHTML = match.textHtml;
+        }
+        if (artRef.template.$player) {
+          artRef.template.$player.classList.add("art-subtitle-show");
+        }
+      } else {
+        if (subContainer.innerHTML !== "") {
+          subContainer.innerHTML = "";
+        }
+      }
+    };
+
+    const loadSubtitleTrack = async (
+      artRef: any,
+      url: string,
+      label: string,
+      extSubtitles: SubtitleTrack[]
+    ) => {
+      if (!url) return;
+      activeSubLabel = label;
+      currentSubtitleUrl = url;
+
+      updateSubtitleControlBtn(artRef, label, extSubtitles);
+      try {
+        artRef.setting.update({
+          name: "subtitle-tracks",
+          tooltip: label,
+        });
+      } catch (_) {}
+
+      artRef.notice.show = `Subtitles: ${label}`;
+
+      try {
+        let vttText = "";
+        if (url.startsWith("data:text/vtt;charset=utf-8,")) {
+          vttText = decodeURIComponent(
+            url.substring("data:text/vtt;charset=utf-8,".length)
+          );
+        } else if (url.startsWith("data:text/vtt;base64,")) {
+          const b64 = url.substring("data:text/vtt;base64,".length);
+          vttText = atob(b64);
+        } else {
+          const res = await fetch(url);
+          if (res.ok) {
+            vttText = await res.text();
+          }
+        }
+
+        if (vttText && currentSubtitleUrl === url) {
+          activeCues = parseVTTText(vttText);
+          if (artRef.subtitle) {
+            artRef.subtitle.show = true;
+          }
+          if (artRef.template?.$player) {
+            artRef.template.$player.classList.add("art-subtitle-show");
+          }
+          renderSubtitleAtTime(artRef, artRef.currentTime || 0);
+        }
+      } catch (err) {
+        console.warn("[ArtPlayer] Subtitle fetch error:", err);
+      }
+    };
+
+    const turnSubtitleOff = (artRef: any, extSubtitles: SubtitleTrack[]) => {
+      activeSubLabel = "Off";
+      activeCues = [];
+      currentSubtitleUrl = null;
+      if (artRef.template?.$subtitle) {
+        artRef.template.$subtitle.innerHTML = "";
+      }
+      if (artRef.subtitle) {
+        artRef.subtitle.show = false;
+      }
+      if (artRef.template?.$player) {
+        artRef.template.$player.classList.remove("art-subtitle-show");
+      }
+      artRef.notice.show = "Subtitles: Off";
+      updateSubtitleControlBtn(artRef, "Off", extSubtitles);
+      try {
+        artRef.setting.update({
+          name: "subtitle-tracks",
+          tooltip: "Off",
+        });
+      } catch (_) {}
+    };
+
+    const openCustomSubtitlePicker = (
+      artRef: any,
+      extSubtitles: SubtitleTrack[]
+    ) => {
+      const input = document.createElement("input");
+      input.type = "file";
+      input.accept = ".vtt,.srt";
+      input.style.display = "none";
+      input.onchange = async (e: any) => {
+        const file = e.target?.files?.[0];
+        if (!file) return;
+        try {
+          const text = await file.text();
+          let vtt = text;
+          if (file.name.endsWith(".srt") || !text.trim().startsWith("WEBVTT")) {
+            const formatted = text.replace(
+              /(\d{2}:\d{2}:\d{2}),(\d{3})/g,
+              "$1.$2"
+            );
+            vtt = `WEBVTT\n\n${formatted.trim()}`;
+          }
+          const baseName = file.name.replace(/\.[^/.]+$/, "");
+          const dataUrl = `data:text/vtt;charset=utf-8,${encodeURIComponent(vtt)}`;
+          loadSubtitleTrack(artRef, dataUrl, `Custom: ${baseName}`, extSubtitles);
+        } catch (err) {
+          console.error("Custom subtitle load error:", err);
+        }
+      };
+      document.body.appendChild(input);
+      input.click();
+      setTimeout(() => input.remove(), 2000);
+    };
+
     // 4. Subtitle Selector & 1-tap [CC] Toggle Button (Anime Drive App player parity)
     const setupSubtitleSetting = (
       artRef: any,
@@ -344,6 +546,14 @@ export default function ArtPlayer({
         });
       }
 
+      // Option to upload user subtitle file (.vtt/.srt)
+      selectorItems.push({
+        default: false,
+        html: "📁 Upload Custom (.vtt / .srt)",
+        value: -99,
+        isExternal: false,
+      });
+
       // Add to Settings Panel
       try {
         artRef.setting.update({
@@ -354,26 +564,17 @@ export default function ArtPlayer({
           selector: selectorItems,
           onSelect: function (item: any) {
             if (item.value === -1) {
-              if (artRef.subtitle) artRef.subtitle.show = false;
-              activeSubLabel = "Off";
-              artRef.notice.show = "Subtitles: Off";
+              turnSubtitleOff(artRef, extSubtitles);
+            } else if (item.value === -99) {
+              openCustomSubtitlePicker(artRef, extSubtitles);
             } else if (item.isExternal && item.file) {
-              if (artRef.subtitle) {
-                artRef.subtitle.show = true;
-                artRef.subtitle.switch(item.file, { name: item.html });
-              }
-              activeSubLabel = item.html;
-              artRef.notice.show = `Subtitles: ${item.html}`;
+              loadSubtitleTrack(artRef, item.file, item.html, extSubtitles);
             } else if (hls && hls.subtitleTracks) {
               hls.subtitleTrack = item.value;
               activeSubLabel = item.html;
               artRef.notice.show = `Subtitles: ${item.html}`;
+              updateSubtitleControlBtn(artRef, activeSubLabel, extSubtitles);
             }
-            artRef.setting.update({
-              name: "subtitle-tracks",
-              tooltip: activeSubLabel,
-            });
-            updateSubtitleControlBtn(artRef, activeSubLabel, extSubtitles);
             return item.html;
           },
         });
@@ -383,9 +584,8 @@ export default function ArtPlayer({
       updateSubtitleControlBtn(artRef, activeSubLabel, extSubtitles);
 
       // Auto-enable first subtitle if available
-      if (defaultSub && defaultSub.file && artRef.subtitle) {
-        artRef.subtitle.show = true;
-        artRef.subtitle.switch(defaultSub.file, { name: defaultSub.label });
+      if (defaultSub && defaultSub.file) {
+        loadSubtitleTrack(artRef, defaultSub.file, defaultSub.label, extSubtitles);
       }
     };
 
@@ -397,7 +597,9 @@ export default function ArtPlayer({
       if (!artRef || !artRef.controls) return;
       const hasSubActive = label !== "Off";
       const ccHtml = `<span style="font-weight:800;font-size:10px;letter-spacing:0.5px;padding:2px 6px;border:1.4px solid currentColor;border-radius:4px;display:inline-block;line-height:1.1;${
-        hasSubActive ? "color:#2563eb;border-color:#2563eb;" : ""
+        hasSubActive
+          ? "color:#2563eb;border-color:#2563eb;box-shadow:0 0 8px rgba(37,99,235,0.35);"
+          : ""
       }">CC</span>`;
 
       try {
@@ -409,26 +611,21 @@ export default function ArtPlayer({
           tooltip: `Subtitles: ${label}`,
           click: function () {
             if (hasSubActive) {
-              if (artRef.subtitle) artRef.subtitle.show = false;
-              activeSubLabel = "Off";
-              artRef.notice.show = "Subtitles: Off";
+              turnSubtitleOff(artRef, extSubtitles);
             } else if (extSubtitles && extSubtitles.length > 0) {
-              const first = extSubtitles[0];
-              if (artRef.subtitle) {
-                artRef.subtitle.show = true;
-                artRef.subtitle.switch(first.file, { name: first.label });
-              }
-              activeSubLabel = first.label;
-              artRef.notice.show = `Subtitles: ${first.label}`;
+              const target =
+                extSubtitles.find(
+                  (s) => s.default || s.label.toLowerCase().includes("eng")
+                ) || extSubtitles[0];
+              loadSubtitleTrack(
+                artRef,
+                target.file,
+                target.label || "English",
+                extSubtitles
+              );
             } else if (artRef.setting) {
               artRef.setting.show = true;
-              return;
             }
-            artRef.setting.update({
-              name: "subtitle-tracks",
-              tooltip: activeSubLabel,
-            });
-            updateSubtitleControlBtn(artRef, activeSubLabel, extSubtitles);
           },
         });
       } catch (_) {}
@@ -676,9 +873,10 @@ export default function ArtPlayer({
       art.on("video:playing", hideBuffering);
       const safetyHideTimer = setTimeout(hideBuffering, 4000);
 
-      // Track playback progress
+      // Track playback progress & synchronize custom subtitles
       let lastProgressReport = 0;
       art.on("video:timeupdate", () => {
+        renderSubtitleAtTime(art, art.currentTime || 0);
         const now = Date.now();
         if (now - lastProgressReport > 3000) {
           lastProgressReport = now;
@@ -686,6 +884,10 @@ export default function ArtPlayer({
             onTimeUpdate(art.currentTime, art.duration);
           }
         }
+      });
+
+      art.on("video:seeked", () => {
+        renderSubtitleAtTime(art, art.currentTime || 0);
       });
 
       // Handle video ended
@@ -753,7 +955,7 @@ export default function ArtPlayer({
         artInstanceRef.current = null;
       }
     };
-  }, [url]);
+  }, [url, subtitles]);
 
   return (
     <div className={`relative w-full h-full overflow-hidden ${className}`}>

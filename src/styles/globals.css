@@ -95,6 +95,12 @@ body {
   transform: translateX(-50%) !important;
   max-width: 90% !important;
   text-align: center !important;
+  z-index: 50 !important;
+}
+
+.art-video-player.art-subtitle-show .art-subtitle,
+.art-video-player .art-subtitle:not(:empty) {
+  display: flex !important;
 }
 
 /* Smooth Image Fade-in */
