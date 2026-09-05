@@ -80,6 +80,7 @@ export default function WatchClient({ anime, episode, epNumber }: WatchClientPro
     let isMounted = true;
     setLoading(true);
     setError(null);
+    setSubtitles([]);
     setUseIframeFallback(false);
 
     async function extract() {
@@ -100,7 +101,12 @@ export default function WatchClient({ anime, episode, epNumber }: WatchClientPro
         const res = await fetch("/api/extract", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ url: rawServerUrl }),
+          body: JSON.stringify({
+            url: rawServerUrl,
+            title: anime.title,
+            season: activeSeason,
+            ep: epNumber,
+          }),
         });
 
         if (!isMounted) return;
@@ -113,9 +119,7 @@ export default function WatchClient({ anime, episode, epNumber }: WatchClientPro
         const extractedM3u8 = data.m3u8 || data.streamUrl || data.url;
         if (extractedM3u8) {
           setStreamUrl(extractedM3u8);
-          if (data.subtitles && Array.isArray(data.subtitles)) {
-            setSubtitles(data.subtitles);
-          }
+          setSubtitles(Array.isArray(data.subtitles) ? data.subtitles : []);
           setUseIframeFallback(false);
         } else {
           setUseIframeFallback(true);

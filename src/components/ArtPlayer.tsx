@@ -362,8 +362,20 @@ export default function ArtPlayer({
 
     const renderSubtitleAtTime = (artRef: any, currentTime: number) => {
       if (!artRef || !artRef.template) return;
-      const subContainer = artRef.template.$subtitle;
-      if (!subContainer) return;
+      let subContainer = artRef.template.$subtitle;
+      if (!subContainer) {
+        if (artRef.template.$player) {
+          subContainer = artRef.template.$player.querySelector(".art-subtitle");
+          if (!subContainer) {
+            subContainer = document.createElement("div");
+            subContainer.className = "art-subtitle";
+            artRef.template.$player.appendChild(subContainer);
+          }
+          artRef.template.$subtitle = subContainer;
+        } else {
+          return;
+        }
+      }
 
       if (activeSubLabel === "Off" || activeCues.length === 0) {
         if (subContainer.innerHTML !== "") {

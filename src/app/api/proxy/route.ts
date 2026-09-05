@@ -103,7 +103,8 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    // Subtitles (WebVTT, SRT) - Normalize and ensure proper text/vtt headers
+    // Subtitles (WebVTT, SRT, as-cdn .jpg subs, or OpenSubtitles .gz)
+    const isSubtitleType = searchParams.get("type") === "subtitle";
     const isVtt =
       targetUrl.toLowerCase().includes(".vtt") ||
       contentType.includes("vtt") ||
@@ -111,14 +112,38 @@ export async function GET(req: NextRequest) {
     const isSrt =
       targetUrl.toLowerCase().includes(".srt") ||
       contentType.includes("srt");
+    const isAsCdnSub =
+      targetUrl.includes("/p/") &&
+      (targetUrl.includes("as-cdn") || targetUrl.endsWith(".jpg"));
+    const isGz = targetUrl.endsWith(".gz") || response.headers.get("content-encoding") === "gzip";
 
-    if (isVtt || isSrt) {
-      let vttText = await response.text();
+    if (isSubtitleType || isVtt || isSrt || isAsCdnSub || isGz) {
+      let rawText = "";
+      if (isGz) {
+        try {
+          const zlibModule = eval("require")("zlib");
+          const arrayBuffer = await response.arrayBuffer();
+          const buffer = Buffer.from(arrayBuffer);
+          rawText = zlibModule.gunzipSync(buffer).toString("utf8");
+        } catch {
+          rawText = await response.text();
+        }
+      } else {
+        rawText = await response.text();
+      }
+
+      // Filter out promotional / ad text lines from OpenSubtitles if present
+      let cleanText = rawText
+        .replace(/.*OpenSubtitles.*[\r\n]*/gi, "")
+        .replace(/.*Advertise your product.*[\r\n]*/gi, "")
+        .replace(/.*contact.*opensubtitles.*[\r\n]*/gi, "");
+
       // Ensure proper WEBVTT header and formatting
-      if (isSrt || !vttText.trim().startsWith("WEBVTT")) {
+      let vttText = cleanText.trim();
+      if (!vttText.startsWith("WEBVTT")) {
         // Convert SRT commas (00:01:23,456) to WebVTT periods (00:01:23.456)
-        const formatted = vttText.replace(/(\d{2}:\d{2}:\d{2}),(\d{3})/g, "$1.$2");
-        vttText = `WEBVTT\n\n${formatted.trim()}`;
+        vttText = vttText.replace(/(\d{2}:\d{2}:\d{2}),(\d{3})/g, "$1.$2");
+        vttText = `WEBVTT\n\n${vttText}`;
       }
 
       return new NextResponse(vttText, {

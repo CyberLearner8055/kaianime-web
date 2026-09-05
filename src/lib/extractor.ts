@@ -64,6 +64,85 @@ export function unpackJs(packed: string): string {
   }
 }
 
+export function extractSubtitlesFromHtml(html: string): SubtitleTrack[] {
+  const tracks: SubtitleTrack[] = [];
+  if (!html) return tracks;
+
+  try {
+    // 1. Check playerjsDefaultSubtitle
+    const defaultMatch = html.match(/playerjsDefaultSubtitle\s*=\s*["']([^"']*)["']/);
+    const defaultLabel = defaultMatch ? defaultMatch[1].trim().toLowerCase() : "";
+
+    // 2. Check playerjsSubtitle e.g. "[English]https://...,[Japanese]https://..." or "https://..."
+    const playerjsMatch = html.match(/playerjsSubtitle\s*=\s*["']([^"']+)["']/);
+    if (playerjsMatch && playerjsMatch[1].trim().length > 0) {
+      const rawVal = playerjsMatch[1].trim();
+      const items = rawVal.split(",");
+      items.forEach((item, idx) => {
+        const clean = item.trim();
+        if (!clean) return;
+        const tagMatch = clean.match(/^\[(.*?)\](.*)$/);
+        let label = tagMatch ? tagMatch[1].trim() : `Track ${idx + 1}`;
+        let file = tagMatch ? tagMatch[2].trim() : clean;
+
+        if (file.startsWith("//")) file = `https:${file}`;
+        if (!file.startsWith("http://") && !file.startsWith("https://")) return;
+
+        if (label.toLowerCase() === "undefined" || !label) {
+          label = "English";
+        }
+
+        const isDefault = defaultLabel ? label.toLowerCase().includes(defaultLabel) : idx === 0;
+        tracks.push({
+          label,
+          language: label.substring(0, 3).toLowerCase(),
+          file,
+          default: isDefault,
+        });
+      });
+    }
+
+    // 3. Check for Dean Edwards packed script containing tracks
+    let unpacked = html;
+    if (html.includes("eval(function(p,a,c,k,e,")) {
+      unpacked = unpackJs(html);
+    }
+
+    // Check "tracks": [...] in unpacked or html
+    const tracksMatch =
+      unpacked.match(/"tracks":\s*(\[[^\]]+\])/) || html.match(/"tracks":\s*(\[[^\]]+\])/);
+    if (tracksMatch) {
+      try {
+        const rawJson = tracksMatch[1].replace(/\\([^\\])/g, "$1");
+        const list = JSON.parse(rawJson);
+        if (Array.isArray(list)) {
+          list.forEach((t: any) => {
+            if (t.kind === "captions" || t.kind === "subtitles" || t.file) {
+              const f = t.file || "";
+              if (f) {
+                const file = f.startsWith("//") ? `https:${f}` : f;
+                const label = t.label || t.name || "English";
+                if (!tracks.some((existing) => existing.file === file)) {
+                  tracks.push({
+                    label,
+                    language: t.language || "eng",
+                    file,
+                    default: Boolean(t.default),
+                  });
+                }
+              }
+            }
+          });
+        }
+      } catch (_) {}
+    }
+  } catch (err) {
+    console.warn("[Extractor] Error extracting subtitles from HTML:", err);
+  }
+
+  return tracks;
+}
+
 /**
  * Extracts direct Master M3U8 and subtitles from video servers
  */
@@ -94,20 +173,37 @@ export async function extractStream(serverUrl: string): Promise<ExtractedStream 
 
       if (videoId) {
         const getVideoUrl = `${origin}/player/index.php?data=${encodeURIComponent(videoId)}&do=getVideo`;
-        const res = await fetch(getVideoUrl, {
-          method: "POST",
-          headers: {
-            "User-Agent": USER_AGENT,
-            "Referer": trimmed,
-            "Origin": origin,
-            "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
-            "X-Requested-With": "XMLHttpRequest",
-          },
-          body: new URLSearchParams({ hash: videoId, r: "" }),
-        });
 
-        if (res.ok) {
-          const data = await res.json();
+        // Fetch direct getVideo API and server HTML page concurrently for ultra speed & full subtitle capture
+        const [videoRes, pageRes] = await Promise.all([
+          fetch(getVideoUrl, {
+            method: "POST",
+            headers: {
+              "User-Agent": USER_AGENT,
+              "Referer": trimmed,
+              "Origin": origin,
+              "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+              "X-Requested-With": "XMLHttpRequest",
+            },
+            body: new URLSearchParams({ hash: videoId, r: "" }),
+          }).catch(() => null),
+          fetch(trimmed, {
+            headers: {
+              "User-Agent": USER_AGENT,
+              "Referer": trimmed,
+              "Origin": origin,
+            },
+          }).catch(() => null),
+        ]);
+
+        let subtitles: SubtitleTrack[] = [];
+        if (pageRes && pageRes.ok) {
+          const html = await pageRes.text();
+          subtitles = extractSubtitlesFromHtml(html);
+        }
+
+        if (videoRes && videoRes.ok) {
+          const data = await videoRes.json();
           const m3u8 = data.videoSource || data.securedLink;
           if (m3u8 && typeof m3u8 === "string" && m3u8.includes(".m3u8")) {
             return {
@@ -115,7 +211,7 @@ export async function extractStream(serverUrl: string): Promise<ExtractedStream 
               referer: `${origin}/`,
               origin,
               isHls: true,
-              subtitles: [],
+              subtitles,
             };
           }
         }
@@ -238,6 +334,11 @@ export async function extractStream(serverUrl: string): Promise<ExtractedStream 
           });
         }
       } catch (_) {}
+    }
+
+    if (subtitles.length === 0) {
+      const htmlSubs = extractSubtitlesFromHtml(html);
+      htmlSubs.forEach((s) => subtitles.push(s));
     }
 
     if (!m3u8Url) {
