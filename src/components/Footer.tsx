@@ -57,6 +57,10 @@ export default function Footer() {
           <Link href="/privacy" className="hover:text-blue-400 transition-colors">
             Privacy Policy
           </Link>
+          <span className="text-slate-600">•</span>
+          <Link href="/download" className="text-blue-400 hover:text-blue-300 font-bold transition-colors">
+            📱 Download App (APK)
+          </Link>
         </nav>
 
         {/* Exact Disclaimer Requested by User */}

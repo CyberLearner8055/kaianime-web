@@ -26,7 +26,7 @@ export default function FloatingAppPromo() {
   return (
     <div className="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-6 z-40 max-w-sm">
       <div className="flex items-center justify-between gap-3 p-3 rounded-2xl bg-[#090d16]/95 border border-blue-500/30 shadow-2xl backdrop-blur-xl">
-        <Link href="/app" className="flex items-center gap-3 flex-1 min-w-0">
+        <Link href="/download" className="flex items-center gap-3 flex-1 min-w-0">
           <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-sky-500 flex items-center justify-center text-white flex-shrink-0 shadow-md shadow-blue-600/30">
             <Smartphone className="w-5 h-5" />
           </div>

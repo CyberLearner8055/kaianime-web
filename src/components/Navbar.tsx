@@ -98,9 +98,7 @@ export default function Navbar() {
 
               {/* Get Android App */}
               <Link
-                href="https://animedrive.me"
-                target="_blank"
-                rel="noreferrer"
+                href="/download"
                 className="hidden lg:inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-glow shadow-blue-600/25 transition-all duration-200 hover:scale-105"
               >
                 <Smartphone className="w-3.5 h-3.5" />
@@ -134,12 +132,12 @@ export default function Navbar() {
             ))}
             <div className="pt-2 border-t border-white/10">
               <Link
-                href="https://animedrive.me"
-                target="_blank"
+                href="/download"
+                onClick={() => setMobileMenuOpen(false)}
                 className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-blue-600 text-white text-xs font-bold"
               >
                 <Smartphone className="w-4 h-4" />
-                Download Anime Drive APK
+                Download Anime Drive APK (v2.1)
               </Link>
             </div>
           </div>
