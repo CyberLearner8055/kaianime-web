@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -16,9 +16,11 @@ import {
   Share2,
   Copy,
   Check,
+  Search,
 } from "lucide-react";
 import { Anime, Episode } from "@/lib/types";
 import ArtPlayer from "@/components/ArtPlayer";
+import AnimeDrivePlayerLoading from "@/components/AnimeDrivePlayerLoading";
 
 interface WatchClientProps {
   anime: Anime;
@@ -224,9 +226,53 @@ export default function WatchClient({ anime, episode, epNumber }: WatchClientPro
     }
   };
 
-  const seasonEpisodes = anime.episodes.filter(
-    (e) => (e.season || 1) === activeSeason
-  );
+  const [epSearch, setEpSearch] = useState("");
+  const CHUNK_SIZE = 50;
+
+  const seasonEpisodes = useMemo(() => {
+    return anime.episodes.filter((e) => (e.season || 1) === activeSeason);
+  }, [anime.episodes, activeSeason]);
+
+  // Episode range chunking for long anime (Naruto, One Piece, etc.)
+  const episodeRanges = useMemo(() => {
+    if (seasonEpisodes.length <= CHUNK_SIZE) return [];
+    const ranges = [];
+    for (let i = 0; i < seasonEpisodes.length; i += CHUNK_SIZE) {
+      const slice = seasonEpisodes.slice(i, i + CHUNK_SIZE);
+      const start = slice[0].number;
+      const end = slice[slice.length - 1].number;
+      ranges.push({ label: `${start} - ${end}`, start, end, startIndex: i });
+    }
+    return ranges;
+  }, [seasonEpisodes]);
+
+  const [selectedRangeIdx, setSelectedRangeIdx] = useState(0);
+
+  // Auto-select range containing current epNumber
+  useEffect(() => {
+    if (episodeRanges.length > 0) {
+      const idx = episodeRanges.findIndex(
+        (r) => epNumber >= r.start && epNumber <= r.end
+      );
+      if (idx !== -1) {
+        setSelectedRangeIdx(idx);
+      }
+    }
+  }, [epNumber, episodeRanges]);
+
+  const filteredEpisodes = useMemo(() => {
+    if (epSearch.trim()) {
+      const term = epSearch.trim();
+      return seasonEpisodes.filter((ep) => String(ep.number).includes(term));
+    }
+    if (episodeRanges.length > 0) {
+      const range = episodeRanges[selectedRangeIdx];
+      if (range) {
+        return seasonEpisodes.slice(range.startIndex, range.startIndex + CHUNK_SIZE);
+      }
+    }
+    return seasonEpisodes;
+  }, [seasonEpisodes, epSearch, episodeRanges, selectedRangeIdx]);
 
   return (
     <div className="max-w-5xl mx-auto px-0 sm:px-4 md:px-6 py-2 sm:py-6">
@@ -278,15 +324,7 @@ export default function WatchClient({ anime, episode, epNumber }: WatchClientPro
       {/* Video Player Canvas Container (Mobile Full-Bleed, Desktop max-w-5xl Clean Fit) */}
       <div className="relative w-full aspect-video bg-black sm:rounded-2xl overflow-hidden border-y sm:border border-white/10 shadow-2xl shadow-blue-950/20">
         {loading ? (
-          <div className="w-full h-full flex flex-col items-center justify-center bg-[#07080c] text-slate-300 gap-3 p-6 text-center">
-            <div className="relative">
-              <div className="w-10 h-10 border-3 border-blue-500/20 border-t-blue-500 rounded-full animate-spin" />
-              <Play className="w-3.5 h-3.5 text-blue-400 fill-current absolute inset-0 m-auto" />
-            </div>
-            <p className="text-xs sm:text-sm font-bold text-white">
-              Connecting Direct 100% Ad-Free Stream...
-            </p>
-          </div>
+          <AnimeDrivePlayerLoading />
         ) : useIframeFallback ? (
           <div className="w-full h-full relative bg-black">
             <iframe
@@ -321,47 +359,61 @@ export default function WatchClient({ anime, episode, epNumber }: WatchClientPro
         )}
       </div>
 
-      {/* Prev / Next EP Controls & Server Selection */}
-      <div className="mt-3 sm:mt-4 p-3 sm:p-4 rounded-xl sm:rounded-2xl bg-[#0a0d14] border border-white/8 flex flex-wrap items-center justify-between gap-3 mx-3 sm:mx-0">
-        {/* Navigation */}
-        <div className="flex items-center gap-2">
-          {prevEp ? (
-            <Link
-              href={`/watch/${anime.id}/${prevEp.number}`}
-              className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-white text-xs font-bold border border-white/10 transition-colors"
-            >
-              <ChevronLeft className="w-4 h-4" />
-              <span>Prev EP</span>
-            </Link>
-          ) : (
-            <span className="px-3 py-1.5 rounded-lg bg-white/5 text-slate-600 text-xs font-semibold cursor-not-allowed">
-              Prev EP
-            </span>
-          )}
+      {/* Prominent Quick Prev / Next Episode Bar (Right Under Video Player) */}
+      <div className="mt-3 p-2 sm:p-2.5 rounded-xl sm:rounded-2xl bg-[#0a0d14] border border-blue-500/20 shadow-lg shadow-blue-950/20 flex items-center justify-between gap-2 mx-3 sm:mx-0">
+        {prevEp ? (
+          <Link
+            href={`/watch/${anime.id}/${prevEp.number}`}
+            className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-white text-xs sm:text-sm font-bold border border-white/10 transition-all active:scale-95 shadow-sm"
+          >
+            <ChevronLeft className="w-4 h-4 text-blue-400" />
+            <span>Prev Ep</span>
+          </Link>
+        ) : (
+          <button
+            disabled
+            className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-white/5 text-slate-600 text-xs sm:text-sm font-semibold border border-white/5 cursor-not-allowed opacity-50"
+          >
+            <ChevronLeft className="w-4 h-4" />
+            <span>Prev Ep</span>
+          </button>
+        )}
 
-          <span className="px-3 py-1.5 rounded-lg bg-blue-600/20 text-blue-400 border border-blue-500/30 text-xs font-bold">
-            EP {epNumber}
+        {/* Current Episode Highlight Badge */}
+        <div className="flex flex-col items-center justify-center px-2 py-0.5">
+          <span className="text-[10px] uppercase tracking-wider text-slate-400 font-bold">Now Playing</span>
+          <span className="text-xs sm:text-sm font-extrabold text-blue-400">
+            Episode {epNumber} <span className="text-slate-500 font-normal">/ {anime.episodesCount}</span>
           </span>
-
-          {nextEp ? (
-            <Link
-              href={`/watch/${anime.id}/${nextEp.number}`}
-              className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-md shadow-blue-600/30 transition-all"
-            >
-              <span>Next EP</span>
-              <ChevronRight className="w-4 h-4" />
-            </Link>
-          ) : (
-            <span className="px-3 py-1.5 rounded-lg bg-white/5 text-slate-600 text-xs font-semibold cursor-not-allowed">
-              Next EP
-            </span>
-          )}
         </div>
 
-        {/* Server Selectors */}
+        {nextEp ? (
+          <Link
+            href={`/watch/${anime.id}/${nextEp.number}`}
+            className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs sm:text-sm font-bold shadow-lg shadow-blue-600/40 transition-all active:scale-95"
+          >
+            <span>Next Ep</span>
+            <ChevronRight className="w-4 h-4" />
+          </Link>
+        ) : (
+          <button
+            disabled
+            className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-white/5 text-slate-600 text-xs sm:text-sm font-semibold border border-white/5 cursor-not-allowed opacity-50"
+          >
+            <span>Next Ep</span>
+            <ChevronRight className="w-4 h-4" />
+          </button>
+        )}
+      </div>
+
+      {/* Stream Server Selection */}
+      <div className="mt-2.5 p-3 rounded-xl sm:rounded-2xl bg-[#0a0d14] border border-white/8 flex flex-wrap items-center justify-between gap-3 mx-3 sm:mx-0">
+        <div className="flex items-center gap-2">
+          <Server className="w-3.5 h-3.5 text-blue-400" />
+          <span className="text-xs text-slate-300 font-bold">Stream Server:</span>
+        </div>
+
         <div className="flex items-center gap-1.5 overflow-x-auto">
-          <Server className="w-3.5 h-3.5 text-blue-400 hidden sm:inline" />
-          <span className="text-xs text-slate-400 font-semibold hidden sm:inline mr-1">Server:</span>
           {serverList.map((s, idx) => (
             <button
               key={idx}
@@ -439,75 +491,97 @@ export default function WatchClient({ anime, episode, epNumber }: WatchClientPro
         </div>
       </div>
 
-      {/* Episode Selection Grid */}
+      {/* Standard Anime Compact Episode Grid */}
       <div className="mt-4 sm:mt-6 p-4 sm:p-5 rounded-xl sm:rounded-2xl bg-[#0a0d14] border border-white/8 mx-3 sm:mx-0">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 mb-3 pb-2.5 border-b border-white/8">
-          <h3 className="font-bold text-sm text-white flex items-center gap-2 shrink-0">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3 pb-3 border-b border-white/8">
+          <div className="flex items-center gap-2 shrink-0">
             <Layers className="w-4 h-4 text-blue-400" />
-            <span>Episodes ({anime.episodesCount})</span>
-          </h3>
+            <h3 className="font-bold text-sm text-white">
+              Episodes ({seasonEpisodes.length})
+            </h3>
+          </div>
 
-          {/* Season Selector if multiple seasons */}
-          {anime.seasons && anime.seasons.length > 1 && (
-            <div className="flex items-center gap-2 max-w-full overflow-hidden">
-              {anime.seasons.length > 5 ? (
-                /* Compact Clean Dropdown when seasons > 5 */
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-slate-400 font-semibold whitespace-nowrap">Season:</span>
-                  <div className="relative">
-                    <select
-                      value={activeSeason}
-                      onChange={(e) => setActiveSeason(Number(e.target.value))}
-                      className="bg-[#101420] text-white text-xs font-bold px-3 py-1.5 rounded-lg border border-blue-500/40 focus:outline-none focus:border-blue-400 cursor-pointer appearance-none pr-8 shadow-md"
-                    >
-                      {anime.seasons.map((s) => (
-                        <option key={s} value={s} className="bg-[#0a0d14] text-white">
-                          Season {s}
-                        </option>
-                      ))}
-                    </select>
-                    <div className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-[10px]">
-                      ▼
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                /* Horizontal Scrollable Pill Buttons when <= 5 seasons */
-                <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar max-w-full py-0.5">
-                  {anime.seasons.map((s) => (
-                    <button
-                      key={s}
-                      onClick={() => setActiveSeason(s)}
-                      className={`px-3 py-1 rounded-lg text-xs font-bold whitespace-nowrap transition-all shrink-0 ${
-                        activeSeason === s
-                          ? "bg-blue-600 text-white shadow-md shadow-blue-600/30"
-                          : "bg-white/5 text-slate-400 hover:text-white border border-white/5"
-                      }`}
-                    >
-                      Season {s}
-                    </button>
-                  ))}
-                </div>
-              )}
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Quick jump to episode search */}
+            <div className="relative">
+              <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
+              <input
+                type="text"
+                value={epSearch}
+                onChange={(e) => setEpSearch(e.target.value)}
+                placeholder="Jump to Ep..."
+                className="w-28 sm:w-32 bg-white/5 hover:bg-white/10 focus:bg-[#101420] text-white text-xs pl-7 pr-2 py-1.5 rounded-lg border border-white/10 focus:border-blue-500 focus:outline-none transition-all placeholder:text-slate-500 font-semibold"
+              />
             </div>
-          )}
+
+            {/* Season Selector if multiple seasons */}
+            {anime.seasons && anime.seasons.length > 1 && (
+              <div className="flex items-center gap-1.5">
+                <select
+                  value={activeSeason}
+                  onChange={(e) => {
+                    setActiveSeason(Number(e.target.value));
+                    setSelectedRangeIdx(0);
+                    setEpSearch("");
+                  }}
+                  className="bg-[#101420] text-white text-xs font-bold px-3 py-1.5 rounded-lg border border-blue-500/40 focus:outline-none focus:border-blue-400 cursor-pointer shadow-md"
+                >
+                  {anime.seasons.map((s) => (
+                    <option key={s} value={s} className="bg-[#0a0d14] text-white">
+                      Season {s}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+          </div>
         </div>
 
-        <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-2 max-h-60 overflow-y-auto pr-1">
-          {seasonEpisodes.map((ep) => (
-            <Link
-              key={ep.number}
-              href={`/watch/${anime.id}/${ep.number}`}
-              className={`py-2 px-1 text-center rounded-lg text-xs font-bold transition-all ${
-                ep.number === epNumber
-                  ? "bg-blue-600 text-white shadow-md shadow-blue-600/30 scale-102"
-                  : "bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white border border-white/5"
-              }`}
-            >
-              EP {ep.number}
-            </Link>
-          ))}
-        </div>
+        {/* Long Anime Episode Range Tabs (e.g. 1-50, 51-100, 101-150...) */}
+        {!epSearch && episodeRanges.length > 0 && (
+          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-2.5 mb-2.5 border-b border-white/5">
+            {episodeRanges.map((r, idx) => (
+              <button
+                key={r.label}
+                onClick={() => setSelectedRangeIdx(idx)}
+                className={`px-3 py-1 rounded-lg text-xs font-bold whitespace-nowrap transition-all shrink-0 ${
+                  selectedRangeIdx === idx
+                    ? "bg-blue-600 text-white shadow-md shadow-blue-600/30"
+                    : "bg-white/5 text-slate-400 hover:text-white border border-white/5"
+                }`}
+              >
+                {r.label}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Standard Anime Compact Grid Buttons: [1] [2] [3] ... [25] */}
+        {filteredEpisodes.length === 0 ? (
+          <div className="py-6 text-center text-xs text-slate-400">
+            No episode found matching &quot;{epSearch}&quot;
+          </div>
+        ) : (
+          <div className="grid grid-cols-6 sm:grid-cols-8 md:grid-cols-10 lg:grid-cols-12 gap-1.5 max-h-64 overflow-y-auto pr-1">
+            {filteredEpisodes.map((ep) => {
+              const isActive = ep.number === epNumber;
+              return (
+                <Link
+                  key={ep.number}
+                  href={`/watch/${anime.id}/${ep.number}`}
+                  className={`h-9 flex items-center justify-center rounded-lg text-xs font-bold transition-all ${
+                    isActive
+                      ? "bg-blue-600 text-white shadow-lg shadow-blue-600/50 ring-2 ring-blue-400 scale-102 z-10"
+                      : "bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white border border-white/5 active:scale-95"
+                  }`}
+                  title={`Episode ${ep.number}`}
+                >
+                  {ep.number}
+                </Link>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* SEO Info & Download Synopsis Block */}

@@ -63,11 +63,11 @@ export default function HeroSpotlight({ featured }: HeroSpotlightProps) {
           <img
             src={item.banner || item.poster}
             alt={item.title}
-            className="w-full h-full object-cover object-center filter brightness-[0.62]"
+            className="w-full h-full object-cover object-center filter brightness-[0.95] contrast-[1.05]"
           />
-          {/* Multi-layered Gradients for readability */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-transparent" />
-          <div className="absolute inset-0 bg-gradient-to-r from-black via-black/80 to-transparent w-full md:w-3/4" />
+          {/* Multi-layered Gradients for readability without covering poster */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/30 to-transparent w-full md:w-3/4" />
         </div>
       ))}
 

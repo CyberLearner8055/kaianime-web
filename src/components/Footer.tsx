@@ -64,9 +64,24 @@ export default function Footer() {
           </p>
         </div>
 
+        {/* AnimeDrive Network Association */}
+        <div className="my-6 max-w-2xl mx-auto text-center px-4 py-3 rounded-xl bg-blue-950/20 border border-blue-500/20 shadow-lg shadow-blue-950/30">
+          <p className="text-xs sm:text-sm text-slate-300 font-medium">
+            <span className="text-white font-bold">KaiAnime</span> is the dedicated ad-free streaming platform of{" "}
+            <a
+              href="https://animedrive.me"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-400 hover:text-blue-300 font-extrabold underline decoration-blue-500/50 underline-offset-4 hover:decoration-blue-400 transition-colors"
+            >
+              AnimeDrive Network
+            </a>.
+          </p>
+        </div>
+
         {/* Copyright */}
-        <div className="text-center pt-2 text-slate-300 text-xs">
-          <p>© 2026 <span className="text-white font-bold">KaiAnime</span>. All Rights Reserved.</p>
+        <div className="text-center pt-2 text-slate-400 text-xs">
+          <p>© 2026 <span className="text-white font-bold">KaiAnime</span> &bull; Part of <a href="https://animedrive.me" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline font-semibold">AnimeDrive.me</a> Network.</p>
         </div>
       </div>
     </footer>

@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Hls from "hls.js";
 import { SubtitleTrack } from "@/lib/types";
+import AnimeDrivePlayerLoading from "@/components/AnimeDrivePlayerLoading";
 
 interface ArtPlayerProps {
   url: string;
@@ -28,8 +29,10 @@ export default function ArtPlayer({
   const artContainerRef = useRef<HTMLDivElement>(null);
   const artInstanceRef = useRef<any>(null);
   const hlsInstanceRef = useRef<Hls | null>(null);
+  const [isBuffering, setIsBuffering] = useState(true);
 
   useEffect(() => {
+    setIsBuffering(true);
     if (!artContainerRef.current || !url) return;
 
     let art: any = null;
@@ -664,6 +667,15 @@ export default function ArtPlayer({
         art.on("video:canplay", triggerResume);
       }
 
+      // Hide buffering overlay once stream connects and can play
+      const hideBuffering = () => {
+        setIsBuffering(false);
+      };
+      art.on("ready", hideBuffering);
+      art.on("video:canplay", hideBuffering);
+      art.on("video:playing", hideBuffering);
+      const safetyHideTimer = setTimeout(hideBuffering, 4000);
+
       // Track playback progress
       let lastProgressReport = 0;
       art.on("video:timeupdate", () => {
@@ -744,8 +756,11 @@ export default function ArtPlayer({
   }, [url]);
 
   return (
-    <div className={`w-full h-full ${className}`}>
+    <div className={`relative w-full h-full overflow-hidden ${className}`}>
       <div ref={artContainerRef} className="w-full h-full" />
+      {isBuffering && (
+        <AnimeDrivePlayerLoading className="pointer-events-none" />
+      )}
     </div>
   );
 }

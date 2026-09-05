@@ -50,7 +50,7 @@ export default function SpotlightSwiper({ spotlights }: SpotlightSwiperProps) {
     <div className="my-4 relative">
       {/* App-like Carousel Card (Height: 220px on mobile, 270px on sm, 300px on md) */}
       <div className="relative w-full h-[220px] sm:h-[260px] md:h-[290px] rounded-2xl overflow-hidden bg-[#07090e] border border-white/10 shadow-2xl shadow-blue-950/20 group">
-        {/* Background Image */}
+        {/* Background Image - Vibrant & Clear */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={
@@ -59,12 +59,24 @@ export default function SpotlightSwiper({ spotlights }: SpotlightSwiperProps) {
               : activeItem.anime.banner || activeItem.anime.poster
           }
           alt="Featured Banner"
-          className="absolute inset-0 w-full h-full object-cover object-center filter brightness-[0.7] transition-all duration-700"
+          className="absolute inset-0 w-full h-full object-cover object-center filter brightness-[0.95] contrast-[1.05] transition-all duration-700"
         />
 
-        {/* App-like Cinematic Gradient (Dark bottom-left to transparent top-right) */}
-        <div className="absolute inset-0 bg-gradient-to-t from-[#050608] via-[#050608]/75 to-transparent sm:w-4/5" />
-        <div className="absolute inset-0 bg-gradient-to-r from-[#050608] via-[#050608]/80 to-transparent w-full md:w-3/5" />
+        {/* Balanced Soft Vignette Gradients: keeps text readable while artwork remains crystal clear */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/35 to-transparent w-full sm:w-3/5" />
+
+        {/* Right side floating poster for anime (makes poster 100% visible and pop out) */}
+        {!activeItem.isPromo && activeItem.anime.poster && (
+          <div className="hidden sm:block absolute right-16 top-1/2 -translate-y-1/2 z-10 w-28 md:w-32 aspect-[2/3] rounded-xl overflow-hidden shadow-2xl border border-white/20 shadow-black/90 rotate-2 group-hover:rotate-0 transition-transform duration-500">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={activeItem.anime.poster}
+              alt={activeItem.anime.title}
+              className="w-full h-full object-cover"
+            />
+          </div>
+        )}
 
         {/* Bottom Left Content */}
         <div className="relative z-10 h-full p-4 sm:p-7 md:p-8 flex flex-col justify-end max-w-xl">
