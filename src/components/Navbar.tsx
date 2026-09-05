@@ -52,19 +52,13 @@ export default function Navbar() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between gap-4">
             {/* Logo */}
-            <Link href="/" className="flex items-center gap-2.5 group">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-700 to-blue-500 flex items-center justify-center shadow-glow shadow-blue-600/30 group-hover:scale-105 transition-transform duration-200">
-                <Play className="w-4 h-4 text-white fill-white ml-0.5" />
-              </div>
-              <div className="flex flex-col">
-                <span className="text-xl font-extrabold tracking-tight text-white flex items-center gap-1 font-display">
-                  Kai<span className="text-blue-500">Anime</span>
-                  <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
-                </span>
-                <span className="text-[10px] font-bold tracking-wider text-blue-400 uppercase -mt-1">
-                  100% Ad-Free
-                </span>
-              </div>
+            <Link href="/" className="flex items-center gap-2 group">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/logo.png"
+                alt="KaiAnime"
+                className="h-8 sm:h-9 w-auto object-contain transition-transform group-hover:scale-105"
+              />
             </Link>
 
             {/* Desktop Navigation Links */}
