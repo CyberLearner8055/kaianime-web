@@ -5,6 +5,22 @@ export const dynamic = "force-dynamic";
 const USER_AGENT =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36";
 
+export async function OPTIONS() {
+  return new NextResponse(null, {
+    status: 204,
+    headers: {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET, HEAD, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type, Range, Authorization",
+      "Access-Control-Max-Age": "86400",
+    },
+  });
+}
+
+export async function HEAD(req: NextRequest) {
+  return GET(req);
+}
+
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const targetUrl = searchParams.get("url");
@@ -36,26 +52,31 @@ export async function GET(req: NextRequest) {
 
     const contentTypeHeader = response.headers.get("content-type") || "application/octet-stream";
     const contentType = contentTypeHeader.toLowerCase();
+
+    // 1. M3U8 Manifests (Master or Sub-playlists)
     const isM3u8 =
-      targetUrl.toLowerCase().includes(".m3u8") ||
-      targetUrl.includes("/hls/") ||
-      contentType.includes("mpegurl") ||
-      contentType.includes("vnd.apple.mpegurl") ||
-      contentType.includes("x-mpegurl");
+      !targetUrl.toLowerCase().includes(".ts") &&
+      !targetUrl.toLowerCase().includes(".m4s") &&
+      !targetUrl.toLowerCase().endsWith(".js") &&
+      (targetUrl.toLowerCase().includes(".m3u8") ||
+        targetUrl.includes("/hls/") ||
+        contentType.includes("mpegurl") ||
+        contentType.includes("vnd.apple.mpegurl") ||
+        contentType.includes("x-mpegurl"));
 
     if (isM3u8) {
       const manifestText = await response.text();
       const baseUrl = new URL(targetUrl);
       const basePath = baseUrl.origin + baseUrl.pathname.substring(0, baseUrl.pathname.lastIndexOf("/") + 1);
 
-      // Rewrite relative URLs inside M3U8 so they also pass through this proxy
+      // Rewrite relative URLs inside M3U8 so all audio, keys, and stream playlists pass through this proxy
       const rewrittenManifest = manifestText
         .split("\n")
         .map((line) => {
           const trimmed = line.trim();
           if (!trimmed) return line;
 
-          // Rewrite URI="..." attributes (e.g. #EXT-X-MEDIA audio tracks or #EXT-X-KEY)
+          // Rewrite URI="..." attributes (e.g. #EXT-X-MEDIA audio tracks or #EXT-X-KEY encryption keys)
           if (trimmed.startsWith("#")) {
             if (trimmed.includes('URI="')) {
               return line.replace(/URI="([^"]+)"/g, (_, uriVal) => {
@@ -98,26 +119,34 @@ export async function GET(req: NextRequest) {
           "Content-Type": "application/vnd.apple.mpegurl",
           "Access-Control-Allow-Origin": "*",
           "Access-Control-Allow-Methods": "GET, HEAD, OPTIONS",
-          "Cache-Control": "no-cache",
+          "Cache-Control": "no-cache, no-store, must-revalidate",
         },
       });
     }
 
-    // Subtitles (WebVTT, SRT, as-cdn .jpg subs, or OpenSubtitles .gz)
+    // 2. Classify Video Segment vs Subtitles
+    const isVideoSegment =
+      targetUrl.toLowerCase().includes(".ts") ||
+      targetUrl.toLowerCase().includes(".m4s") ||
+      targetUrl.toLowerCase().includes(".mp4") ||
+      (targetUrl.includes("/p/") && targetUrl.endsWith(".js"));
+
     const isSubtitleType = searchParams.get("type") === "subtitle";
     const isVtt =
-      targetUrl.toLowerCase().includes(".vtt") ||
-      contentType.includes("vtt") ||
-      contentType.includes("subtitles");
+      !targetUrl.toLowerCase().includes(".m3u8") &&
+      (targetUrl.toLowerCase().includes(".vtt") ||
+        contentType.includes("vtt") ||
+        contentType.includes("text/vtt"));
     const isSrt =
-      targetUrl.toLowerCase().includes(".srt") ||
-      contentType.includes("srt");
-    const isAsCdnSub =
-      targetUrl.includes("/p/") &&
-      (targetUrl.includes("as-cdn") || targetUrl.endsWith(".jpg"));
-    const isGz = targetUrl.endsWith(".gz") || response.headers.get("content-encoding") === "gzip";
+      targetUrl.toLowerCase().includes(".srt") || contentType.includes("srt");
+    const isGz =
+      isSubtitleType &&
+      (targetUrl.endsWith(".gz") || response.headers.get("content-encoding") === "gzip");
 
-    if (isSubtitleType || isVtt || isSrt || isAsCdnSub || isGz) {
+    const isSubtitle = !isVideoSegment && (isSubtitleType || isVtt || isSrt || isGz);
+
+    // 3. Subtitles Handler (WebVTT, SRT, or OpenSubtitles .gz)
+    if (isSubtitle) {
       let rawText = "";
       if (isGz) {
         try {
@@ -132,16 +161,14 @@ export async function GET(req: NextRequest) {
         rawText = await response.text();
       }
 
-      // Filter out promotional / ad text lines from OpenSubtitles if present
+      // Filter out promotional lines if present from external subtitle sources
       let cleanText = rawText
         .replace(/.*OpenSubtitles.*[\r\n]*/gi, "")
         .replace(/.*Advertise your product.*[\r\n]*/gi, "")
         .replace(/.*contact.*opensubtitles.*[\r\n]*/gi, "");
 
-      // Ensure proper WEBVTT header and formatting
       let vttText = cleanText.trim();
       if (!vttText.startsWith("WEBVTT")) {
-        // Convert SRT commas (00:01:23,456) to WebVTT periods (00:01:23.456)
         vttText = vttText.replace(/(\d{2}:\d{2}:\d{2}),(\d{3})/g, "$1.$2");
         vttText = `WEBVTT\n\n${vttText}`;
       }
@@ -157,22 +184,33 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    // Binary chunks (TS, MP4)
-    const body = response.body;
+    // 4. Binary Video Segments / Chunks (TS, MP4, JS-obfuscated TS)
+    let chunkContentType = contentType;
+    if (
+      targetUrl.toLowerCase().includes(".ts") ||
+      (targetUrl.includes("/p/") && targetUrl.endsWith(".js"))
+    ) {
+      chunkContentType = "video/mp2t";
+    } else if (targetUrl.toLowerCase().includes(".mp4")) {
+      chunkContentType = "video/mp4";
+    }
+
+    const arrayBuffer = await response.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+
     const responseHeaders: Record<string, string> = {
-      "Content-Type": contentType,
+      "Content-Type": chunkContentType,
+      "Content-Length": String(buffer.byteLength),
       "Access-Control-Allow-Origin": "*",
       "Access-Control-Allow-Methods": "GET, HEAD, OPTIONS",
       "Cache-Control": "public, max-age=31536000, immutable",
+      "Accept-Ranges": "bytes",
     };
-
-    const contentLength = response.headers.get("content-length");
-    if (contentLength) responseHeaders["Content-Length"] = contentLength;
 
     const contentRange = response.headers.get("content-range");
     if (contentRange) responseHeaders["Content-Range"] = contentRange;
 
-    return new NextResponse(body, {
+    return new NextResponse(buffer, {
       status: response.status,
       headers: responseHeaders,
     });
