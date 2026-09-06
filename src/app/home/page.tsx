@@ -6,7 +6,6 @@ import LatestAnimesSection from "@/components/LatestAnimesSection";
 import TopAnimesWidget from "@/components/TopAnimesWidget";
 import FloatingAppPromo from "@/components/FloatingAppPromo";
 import ContentRail from "@/components/ContentRail";
-import HomeWatchlistRail from "@/components/HomeWatchlistRail";
 import {
   getAllAnime,
   getSpotlightAnime,
@@ -98,9 +97,6 @@ export default async function HomePage() {
           )}
         </div>
       )}
-
-      {/* User Personal Watchlist (renders dynamically when items exist) */}
-      <HomeWatchlistRail />
 
       {/* Dynamic Sections Rendered in Admin-Configured Order */}
       {activeSections.map((section) => {
