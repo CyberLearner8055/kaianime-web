@@ -90,10 +90,10 @@ async function handleExtract(
     const refererParam = data.referer || trimmed;
     const originParam = data.origin || "";
 
-    // Proxy the stream through /api/proxy to guarantee 100% CORS and referer bypass
+    // Proxy the stream through /api/proxy with cache-buster &_v=2 to guarantee fresh un-cached playback
     const proxiedStreamUrl = `/api/proxy?url=${encodeURIComponent(
       data.url
-    )}&referer=${encodeURIComponent(refererParam)}&origin=${encodeURIComponent(originParam)}`;
+    )}&_v=2&referer=${encodeURIComponent(refererParam)}&origin=${encodeURIComponent(originParam)}`;
 
     // Proxy every subtitle track through /api/proxy to guarantee 100% CORS, WebVTT headers, and referer bypass
     const proxiedSubtitles = (data.subtitles || []).map((sub) => {

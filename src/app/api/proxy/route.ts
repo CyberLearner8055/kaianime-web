@@ -88,7 +88,7 @@ export async function GET(req: NextRequest) {
                 } else {
                   fullUri = basePath + uriVal;
                 }
-                const proxied = `/api/proxy?url=${encodeURIComponent(fullUri)}&referer=${encodeURIComponent(
+                const proxied = `/api/proxy?url=${encodeURIComponent(fullUri)}&_v=2&referer=${encodeURIComponent(
                   referer
                 )}&origin=${encodeURIComponent(origin)}`;
                 return `URI="${proxied}"`;
@@ -106,7 +106,7 @@ export async function GET(req: NextRequest) {
             fullUrl = basePath + trimmed;
           }
 
-          const proxyUrl = `/api/proxy?url=${encodeURIComponent(fullUrl)}&referer=${encodeURIComponent(
+          const proxyUrl = `/api/proxy?url=${encodeURIComponent(fullUrl)}&_v=2&referer=${encodeURIComponent(
             referer
           )}&origin=${encodeURIComponent(origin)}`;
           return proxyUrl;

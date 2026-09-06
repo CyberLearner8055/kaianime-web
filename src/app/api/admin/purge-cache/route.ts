@@ -27,13 +27,21 @@ export async function POST() {
     const freshData = await fetchAllAnime();
     const config = getSiteConfig();
 
-    return NextResponse.json({
-      success: true,
-      message: "Cache purged successfully! Reloaded " + freshData.length + " anime titles from data source.",
-      count: freshData.length,
-      dataUrl: config.dataUrl,
-      timestamp: new Date().toISOString(),
-    });
+    return NextResponse.json(
+      {
+        success: true,
+        message: "Cache purged successfully! Reloaded " + freshData.length + " anime titles and cleared browser cache.",
+        count: freshData.length,
+        dataUrl: config.dataUrl,
+        timestamp: new Date().toISOString(),
+      },
+      {
+        headers: {
+          "Clear-Site-Data": '"cache"',
+          "Cache-Control": "no-store, no-cache, must-revalidate",
+        },
+      }
+    );
   } catch (err: any) {
     return NextResponse.json(
       {

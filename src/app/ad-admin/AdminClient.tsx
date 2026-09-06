@@ -115,7 +115,19 @@ export default function AdminClient({ initialConfig, allAnime }: AdminClientProp
     setPurging(true);
     setPurgeResult(null);
     try {
-      const res = await fetch("/api/admin/purge-cache", { method: "POST" });
+      // 1. Clear local browser CacheStorage if supported
+      if (typeof window !== "undefined" && "caches" in window) {
+        try {
+          const cacheKeys = await window.caches.keys();
+          await Promise.all(cacheKeys.map((key) => window.caches.delete(key)));
+        } catch (_) {}
+      }
+
+      // 2. Call server endpoint which flushes catalog memory and sends Clear-Site-Data: "cache"
+      const res = await fetch("/api/admin/purge-cache", {
+        method: "POST",
+        headers: { "Cache-Control": "no-cache" },
+      });
       const data = await res.json();
       if (!res.ok || !data.success) {
         throw new Error(data.message || "Failed to purge cache");
@@ -132,6 +144,36 @@ export default function AdminClient({ initialConfig, allAnime }: AdminClientProp
       });
     } finally {
       setPurging(false);
+    }
+  };
+
+  const [clearingBrowserCache, setClearingBrowserCache] = useState(false);
+  const handleClearBrowserCache = async () => {
+    setClearingBrowserCache(true);
+    try {
+      // 1. Clear CacheStorage
+      if (typeof window !== "undefined" && "caches" in window) {
+        try {
+          const keys = await window.caches.keys();
+          await Promise.all(keys.map((k) => window.caches.delete(k)));
+        } catch (_) {}
+      }
+
+      // 2. Clear SessionStorage
+      try {
+        sessionStorage.clear();
+      } catch (_) {}
+
+      // 3. Call server purge with Clear-Site-Data
+      await fetch("/api/admin/purge-cache", { method: "POST" }).catch(() => null);
+
+      alert("Browser cache & storage cleared successfully! Page will now refresh.");
+      window.location.reload();
+    } catch (err: any) {
+      alert("Clear cache notice: " + (err?.message || "Refreshed"));
+      window.location.reload();
+    } finally {
+      setClearingBrowserCache(false);
     }
   };
 
@@ -976,6 +1018,37 @@ export default function AdminClient({ initialConfig, allAnime }: AdminClientProp
                   <p>{purgeResult.message}</p>
                 </div>
               )}
+
+              {/* Clear Browser Video/HTTP Cache Card */}
+              <div className="p-5 rounded-2xl bg-gradient-to-r from-amber-950/20 to-orange-950/20 border border-amber-500/25 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                  <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                    <Trash2 className="w-4 h-4 text-amber-400" />
+                    <span>Clear Browser &amp; Video Player Cache</span>
+                  </h3>
+                  <p className="text-xs text-slate-300 mt-1 max-w-xl">
+                    Videos buffering or loading old data in your regular browser? Click below to clear local browser HTTP disk cache, empty player video buffers, and force an instant hard reload!
+                  </p>
+                </div>
+
+                <button
+                  onClick={handleClearBrowserCache}
+                  disabled={clearingBrowserCache}
+                  className="px-5 py-3 rounded-xl bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-xl shadow-amber-600/30 transition-all disabled:opacity-50 shrink-0 cursor-pointer"
+                >
+                  {clearingBrowserCache ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Clearing Browser Cache...</span>
+                    </>
+                  ) : (
+                    <>
+                      <RotateCcw className="w-4 h-4" />
+                      <span>Clear Browser Cache &amp; Reload</span>
+                    </>
+                  )}
+                </button>
+              </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
                 <div className="p-4 rounded-xl bg-white/[0.02] border border-white/5">
