@@ -45,7 +45,11 @@ export function addToWatchlist(item: Omit<WatchlistItem, "addedAt">): void {
     };
     list.unshift(newItem);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
-    window.dispatchEvent(new Event(EVENT_NAME));
+    window.dispatchEvent(
+      new CustomEvent(EVENT_NAME, {
+        detail: { action: "added", item: newItem },
+      })
+    );
   } catch (_) {}
 }
 
@@ -54,7 +58,11 @@ export function removeFromWatchlist(id: string): void {
   try {
     const list = getWatchlist().filter((item) => item.id !== id);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
-    window.dispatchEvent(new Event(EVENT_NAME));
+    window.dispatchEvent(
+      new CustomEvent(EVENT_NAME, {
+        detail: { action: "removed", id },
+      })
+    );
   } catch (_) {}
 }
 

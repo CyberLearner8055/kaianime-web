@@ -47,6 +47,35 @@ export function slugify(text: string): string {
     .replace(/(^-|-$)/g, "");
 }
 
+export const KNOWN_ONGOING_KEYWORDS = [
+  "mushoku-tensei",
+  "welcome-to-demon-school",
+  "iruma-kun",
+  "jojo",
+  "captain-tsubasa",
+  "solo-leveling",
+  "one-piece",
+  "bleach",
+  "tower-of-god",
+  "blue-lock",
+  "dandadan",
+  "fairy-tail",
+  "kaiju-no-8",
+  "rezero",
+  "shangri-la",
+  "wind-breaker",
+  "spy-x-family",
+  "slime",
+  "classroom-of-the-elite",
+  "my-hero-academia",
+  "dragon-ball-daima",
+  "sakamoto-days",
+  "chainsaw-man",
+  "sparks-of-tomorrow",
+  "demon-slayer",
+  "jujutsu-kaisen",
+];
+
 export async function fetchAllAnime(): Promise<Anime[]> {
   const now = Date.now();
   if (memoryCache && now - lastFetchTime < CACHE_TTL) {
@@ -167,13 +196,13 @@ export async function fetchAllAnime(): Promise<Anime[]> {
         status:
           siteConfig.animeOverrides?.[cleanSlug]?.status ||
           siteConfig.animeOverrides?.[rawId]?.status ||
-          (item.status
-            ? item.status === "Ongoing" || item.status === "RELEASING"
-              ? "Ongoing"
-              : "Completed"
-            : item.type === "Movie" || episodes.length === 1
-            ? "Completed"
-            : item.inSlider || item.section === "Ongoing" || item.section === "running"
+          (item.status === "Ongoing" || item.status === "RELEASING"
+            ? "Ongoing"
+            : KNOWN_ONGOING_KEYWORDS.some(
+                (k) => cleanSlug.includes(k) || rawTitle.toLowerCase().includes(k.replace(/-/g, " "))
+              )
+            ? "Ongoing"
+            : item.section === "Ongoing" || item.section === "running"
             ? "Ongoing"
             : "Completed"),
         rating,
@@ -225,15 +254,26 @@ export const getAllAnime = fetchAllAnime;
 export async function getAnimeByIdOrSlug(identifier: string): Promise<Anime | null> {
   const all = await fetchAllAnime();
   const cleanId = decodeURIComponent(identifier).toLowerCase().trim();
-  return (
-    all.find(
-      (a) =>
-        a.id.toLowerCase() === cleanId ||
-        (a.originalId && a.originalId.toLowerCase() === cleanId) ||
-        slugify(a.title) === cleanId ||
-        a.title.toLowerCase() === cleanId
-    ) || null
+  const found = all.find(
+    (a) =>
+      a.id.toLowerCase() === cleanId ||
+      (a.originalId && a.originalId.toLowerCase() === cleanId) ||
+      slugify(a.title) === cleanId ||
+      a.title.toLowerCase() === cleanId
   );
+  if (!found) return null;
+
+  const cleanSlug = slugify(found.title);
+  const isOngoing =
+    found.status === "Ongoing" ||
+    KNOWN_ONGOING_KEYWORDS.some(
+      (k) => cleanSlug.includes(k) || found.title.toLowerCase().includes(k.replace(/-/g, " "))
+    );
+
+  if (isOngoing) {
+    return { ...found, status: "Ongoing" };
+  }
+  return found;
 }
 
 // Upper Slider: Live App-Matched Trending Anime (Anime Drive App analytics parity)
@@ -349,7 +389,7 @@ export async function getRunningAnime(): Promise<Anime[]> {
     const res = await fetch("https://medal-chronicle-initial-fee.trycloudflare.com/", {
       next: { revalidate: 1800, tags: ["running-anime"] },
       headers: { "User-Agent": "AnimeDrive-Web/1.0" },
-      signal: AbortSignal.timeout(600),
+      signal: AbortSignal.timeout(1800),
     });
 
     if (res.ok) {
@@ -377,7 +417,7 @@ export async function getRunningAnime(): Promise<Anime[]> {
                 cleanApp.includes(cleanApi) ||
                 cleanApi.includes(cleanApp))
             ) {
-              matched.push(a);
+              matched.push({ ...a, status: "Ongoing" });
               seenIds.add(a.id);
               break;
             }
@@ -389,7 +429,9 @@ export async function getRunningAnime(): Promise<Anime[]> {
           const fallbacks = all.filter(
             (a) => a.status.toLowerCase() === "ongoing" && !seenIds.has(a.id)
           );
-          const fullList = [...matched, ...fallbacks].slice(0, 18);
+          const fullList = [...matched, ...fallbacks]
+            .map((a) => ({ ...a, status: "Ongoing" }))
+            .slice(0, 18);
           runningCache = fullList;
           lastRunningFetch = now;
           return fullList;
@@ -406,7 +448,7 @@ export async function getRunningAnime(): Promise<Anime[]> {
       a.status.toLowerCase() === "ongoing" ||
       a.genres.some((g) => g.toLowerCase().includes("ongoing"))
   );
-  const result = running.length >= 6 ? running.slice(0, 18) : all.slice(0, 18);
+  const result = running.slice(0, 18).map((a) => ({ ...a, status: "Ongoing" }));
   runningCache = result;
   lastRunningFetch = now;
   return result;

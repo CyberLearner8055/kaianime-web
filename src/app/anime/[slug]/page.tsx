@@ -232,15 +232,23 @@ export default async function AnimeDetailPage({ params }: PageProps) {
 
               {/* Floating Badges */}
               <div className="absolute top-3 left-3 right-3 flex items-center justify-between pointer-events-none">
-                {anime.isHindiDubbed ? (
-                  <span className="px-2.5 py-1 bg-emerald-500 text-black font-extrabold text-[11px] uppercase tracking-wider rounded-lg shadow-lg">
-                    Hindi Dub
-                  </span>
-                ) : (
-                  <span className="px-2.5 py-1 bg-blue-600 text-white font-extrabold text-[11px] uppercase tracking-wider rounded-lg shadow-lg">
-                    Multi Audio
-                  </span>
-                )}
+                <div className="flex items-center gap-1.5">
+                  {anime.isHindiDubbed ? (
+                    <span className="px-2.5 py-1 bg-emerald-500 text-black font-extrabold text-[11px] uppercase tracking-wider rounded-lg shadow-lg">
+                      Hindi Dub
+                    </span>
+                  ) : (
+                    <span className="px-2.5 py-1 bg-blue-600 text-white font-extrabold text-[11px] uppercase tracking-wider rounded-lg shadow-lg">
+                      Multi Audio
+                    </span>
+                  )}
+                  {anime.status === "Ongoing" && (
+                    <span className="px-2 py-0.5 text-[11px] font-black bg-amber-400 text-black rounded-lg shadow-lg flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-black animate-pulse" />
+                      Ongoing
+                    </span>
+                  )}
+                </div>
                 <span className="px-2 py-0.5 text-xs font-bold bg-black/75 text-amber-300 border border-amber-500/20 rounded-lg backdrop-blur-sm flex items-center gap-1">
                   <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
                   {anime.rating.toFixed(1)}
@@ -276,12 +284,10 @@ export default async function AnimeDetailPage({ params }: PageProps) {
               <div className="flex items-center justify-between border-b border-white/5 pb-2.5">
                 <span className="text-slate-400">Status</span>
                 {(() => {
-                  const displayStatus = enriched?.status
-                    ? enriched.status === "RELEASING"
-                      ? "Ongoing"
-                      : "Completed"
-                    : anime.status;
-                  const isOngoing = displayStatus === "Ongoing";
+                  const isOngoing =
+                    anime.status === "Ongoing" ||
+                    enriched?.status === "RELEASING";
+                  const displayStatus = isOngoing ? "Ongoing" : "Completed";
                   return (
                     <span className={`font-bold flex items-center gap-1.5 ${isOngoing ? "text-amber-400" : "text-emerald-400"}`}>
                       {isOngoing ? (

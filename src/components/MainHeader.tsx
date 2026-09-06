@@ -3,9 +3,10 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Menu, ShieldCheck, Search } from "lucide-react";
+import { Menu, ShieldCheck, Search, Heart } from "lucide-react";
 import SidebarDrawer from "./SidebarDrawer";
 import SearchModal from "./SearchModal";
+import { useWatchlist } from "@/lib/watchlist";
 
 interface MainHeaderProps {
   allAnimeIds?: string[];
@@ -16,6 +17,7 @@ export default function MainHeader({ allAnimeIds = [] }: MainHeaderProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isTooltipOpen, setIsTooltipOpen] = useState(false);
+  const { count } = useWatchlist();
 
   return (
     <>
@@ -66,6 +68,25 @@ export default function MainHeader({ allAnimeIds = [] }: MainHeaderProps) {
               </div>
             )}
           </div>
+
+          {/* Watchlist Quick Button with live counter */}
+          <Link
+            href="/watchlist"
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 text-xs font-bold transition-all"
+            title="My Watchlist"
+          >
+            <Heart
+              className={`w-4 h-4 transition-transform ${
+                count > 0 ? "fill-rose-500 text-rose-500" : "text-rose-400"
+              }`}
+            />
+            <span className="hidden sm:inline">Watchlist</span>
+            {count > 0 && (
+              <span className="px-1.5 py-0.2 text-[10px] font-black bg-rose-600 text-white rounded-full leading-none">
+                {count}
+              </span>
+            )}
+          </Link>
 
           {/* Search Trigger */}
           <button

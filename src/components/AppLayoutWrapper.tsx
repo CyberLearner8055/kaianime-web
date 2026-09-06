@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import MainHeader from "@/components/MainHeader";
 import Footer from "@/components/Footer";
 import TopProgressBar from "@/components/TopProgressBar";
+import WatchlistToast from "@/components/WatchlistToast";
 
 interface AppLayoutWrapperProps {
   children: React.ReactNode;
@@ -20,6 +21,7 @@ export default function AppLayoutWrapper({ children }: AppLayoutWrapperProps) {
       <Suspense fallback={null}>
         <TopProgressBar />
       </Suspense>
+      <WatchlistToast />
       {isLandingPage || isAdminPage ? (
         children
       ) : (

@@ -37,9 +37,16 @@ export default function AnimeCard({ anime, priority = false, rank }: AnimeCardPr
             <span className="px-2 py-0.5 text-[10px] font-black uppercase tracking-wide bg-blue-600 text-white shadow-md rounded-md backdrop-blur-sm">
               Hindi Dub
             </span>
-            <span className="px-1.5 py-0.5 text-[10px] font-bold bg-black/60 text-slate-200 border border-white/10 rounded-md backdrop-blur-sm">
-              HD
-            </span>
+            {anime.status === "Ongoing" ? (
+              <span className="px-1.5 py-0.5 text-[10px] font-black bg-amber-400 text-black rounded-md backdrop-blur-sm flex items-center gap-1 shadow-sm">
+                <span className="w-1.5 h-1.5 rounded-full bg-black animate-pulse" />
+                Ongoing
+              </span>
+            ) : (
+              <span className="px-1.5 py-0.5 text-[10px] font-bold bg-black/60 text-slate-200 border border-white/10 rounded-md backdrop-blur-sm">
+                HD
+              </span>
+            )}
           </div>
 
           <div className="flex items-center gap-1.5">

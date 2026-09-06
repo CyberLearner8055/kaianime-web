@@ -2,7 +2,8 @@
 
 import React from "react";
 import Link from "next/link";
-import { X, Smartphone, Film, Tv, Sparkles, ChevronDown, Info, Flame } from "lucide-react";
+import { X, Smartphone, Film, Tv, Sparkles, ChevronDown, Info, Flame, Heart } from "lucide-react";
+import { useWatchlist } from "@/lib/watchlist";
 
 interface SidebarDrawerProps {
   isOpen: boolean;
@@ -30,6 +31,8 @@ const genres = [
 ];
 
 export default function SidebarDrawer({ isOpen, onClose }: SidebarDrawerProps) {
+  const { count } = useWatchlist();
+
   return (
     <>
       {/* Backdrop */}
@@ -60,7 +63,24 @@ export default function SidebarDrawer({ isOpen, onClose }: SidebarDrawerProps) {
         </div>
 
         {/* Primary Links */}
-        <nav className="space-y-1">
+        <nav className="space-y-1.5">
+          {/* Watchlist Highlighted Item */}
+          <Link
+            href="/watchlist"
+            onClick={onClose}
+            className="flex items-center justify-between p-3 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/25 font-bold text-sm transition-all"
+          >
+            <div className="flex items-center gap-3">
+              <Heart className={`w-5 h-5 ${count > 0 ? "fill-rose-500 text-rose-500" : "text-rose-400"}`} />
+              <span>My Watchlist</span>
+            </div>
+            {count > 0 && (
+              <span className="px-2 py-0.5 text-xs font-black bg-rose-600 text-white rounded-full">
+                {count}
+              </span>
+            )}
+          </Link>
+
           <Link href="/app" onClick={onClose} className="ak-single-link">
             <Smartphone className="w-5 h-5 text-blue-500" />
             <span>Get App</span>
