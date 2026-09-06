@@ -2,6 +2,7 @@ import React from "react";
 import Link from "next/link";
 import { Star, Play, Layers } from "lucide-react";
 import { Anime } from "@/lib/types";
+import WatchlistButton from "./WatchlistButton";
 
 interface AnimeCardProps {
   anime: Anime;
@@ -30,9 +31,9 @@ export default function AnimeCard({ anime, priority = false, rank }: AnimeCardPr
         {/* Gradient Overlay */}
         <div className="absolute inset-0 bg-gradient-to-t from-[#08090D] via-transparent to-black/35 opacity-80 group-hover:opacity-60 transition-opacity" />
 
-        {/* Top Badges */}
-        <div className="absolute top-2.5 left-2.5 right-2.5 flex items-center justify-between gap-1 pointer-events-none">
-          <div className="flex items-center gap-1.5 flex-wrap">
+        {/* Top Badges & Watchlist Action */}
+        <div className="absolute top-2.5 left-2.5 right-2.5 flex items-center justify-between gap-1 z-20">
+          <div className="flex items-center gap-1.5 flex-wrap pointer-events-none">
             <span className="px-2 py-0.5 text-[10px] font-black uppercase tracking-wide bg-blue-600 text-white shadow-md rounded-md backdrop-blur-sm">
               Hindi Dub
             </span>
@@ -41,9 +42,12 @@ export default function AnimeCard({ anime, priority = false, rank }: AnimeCardPr
             </span>
           </div>
 
-          <div className="flex items-center gap-1 px-1.5 py-0.5 text-[11px] font-bold bg-black/75 text-amber-300 border border-amber-500/20 rounded-md backdrop-blur-sm">
-            <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
-            <span>{anime.rating.toFixed(1)}</span>
+          <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1 px-1.5 py-0.5 text-[11px] font-bold bg-black/75 text-amber-300 border border-amber-500/20 rounded-md backdrop-blur-sm pointer-events-none">
+              <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
+              <span>{anime.rating.toFixed(1)}</span>
+            </div>
+            <WatchlistButton anime={anime} variant="icon" />
           </div>
         </div>
 

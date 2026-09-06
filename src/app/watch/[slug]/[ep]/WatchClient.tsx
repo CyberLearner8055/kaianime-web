@@ -21,6 +21,7 @@ import {
 import { Anime, Episode } from "@/lib/types";
 import ArtPlayer from "@/components/ArtPlayer";
 import AnimeDrivePlayerLoading from "@/components/AnimeDrivePlayerLoading";
+import WatchlistButton from "@/components/WatchlistButton";
 
 interface WatchClientProps {
   anime: Anime;
@@ -75,13 +76,18 @@ export default function WatchClient({ anime, episode, epNumber }: WatchClientPro
   const currentServer = serverList[selectedServerIdx] || serverList[0];
   const rawServerUrl = currentServer?.url || "";
 
-  // Extract M3U8 Stream
+  // Extract M3U8 Stream with fast failover and auto-fallback
   useEffect(() => {
     let isMounted = true;
     setLoading(true);
     setError(null);
     setSubtitles([]);
     setUseIframeFallback(false);
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => {
+      controller.abort();
+    }, 6500);
 
     async function extract() {
       if (!rawServerUrl) {
@@ -107,6 +113,7 @@ export default function WatchClient({ anime, episode, epNumber }: WatchClientPro
             season: activeSeason,
             ep: epNumber,
           }),
+          signal: controller.signal,
         });
 
         if (!isMounted) return;
@@ -122,13 +129,27 @@ export default function WatchClient({ anime, episode, epNumber }: WatchClientPro
           setSubtitles(Array.isArray(data.subtitles) ? data.subtitles : []);
           setUseIframeFallback(false);
         } else {
+          // If this server returned no direct stream, try the next server if available
+          if (selectedServerIdx < serverList.length - 1) {
+            console.log(`[WatchClient] Empty stream on Server ${selectedServerIdx + 1}, switching to Server ${selectedServerIdx + 2}`);
+            setSelectedServerIdx((prev) => prev + 1);
+            return;
+          }
           setUseIframeFallback(true);
         }
       } catch (err: any) {
         if (!isMounted) return;
-        console.warn("[WatchClient] Extraction error:", err);
+        console.warn("[WatchClient] Extraction error / timeout:", err);
+        // Automatic server failover: if this server times out or fails, try the next server
+        if (selectedServerIdx < serverList.length - 1) {
+          console.log(`[WatchClient] Auto-switching to Server ${selectedServerIdx + 2}...`);
+          setSelectedServerIdx((prev) => prev + 1);
+          return;
+        }
+        // If all servers exhausted, fallback to web iframe player immediately so video plays
         setUseIframeFallback(true);
       } finally {
+        clearTimeout(timeoutId);
         if (isMounted) setLoading(false);
       }
     }
@@ -137,6 +158,8 @@ export default function WatchClient({ anime, episode, epNumber }: WatchClientPro
 
     return () => {
       isMounted = false;
+      controller.abort();
+      clearTimeout(timeoutId);
     };
   }, [rawServerUrl]);
 
@@ -295,6 +318,7 @@ export default function WatchClient({ anime, episode, epNumber }: WatchClientPro
         </div>
 
         <div className="flex items-center gap-2">
+          <WatchlistButton anime={anime} variant="pill" />
           <Link
             href={`/anime/${anime.id}`}
             className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white border border-white/10 text-xs font-semibold transition-colors"

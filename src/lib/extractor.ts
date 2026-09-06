@@ -186,6 +186,7 @@ export async function extractStream(serverUrl: string): Promise<ExtractedStream 
               "X-Requested-With": "XMLHttpRequest",
             },
             body: new URLSearchParams({ hash: videoId, r: "" }),
+            signal: AbortSignal.timeout(4500),
           }).catch(() => null),
           fetch(trimmed, {
             headers: {
@@ -193,6 +194,7 @@ export async function extractStream(serverUrl: string): Promise<ExtractedStream 
               "Referer": trimmed,
               "Origin": origin,
             },
+            signal: AbortSignal.timeout(4500),
           }).catch(() => null),
         ]);
 
@@ -237,6 +239,7 @@ export async function extractStream(serverUrl: string): Promise<ExtractedStream 
             "Referer": trimmed,
             "X-Requested-With": "XMLHttpRequest",
           },
+          signal: AbortSignal.timeout(4500),
         });
 
         if (res.ok) {
@@ -283,6 +286,7 @@ export async function extractStream(serverUrl: string): Promise<ExtractedStream 
         "Origin": origin,
         "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
       },
+      signal: AbortSignal.timeout(4500),
     });
 
     if (!res.ok) {

@@ -30,17 +30,13 @@ async function fetchFallbackSubtitles(title?: string, season: number = 1, ep: nu
       `${cleanTitle} Episode ${ep}`,
     ];
 
-    for (const q of queries) {
+    const fetchSingleQuery = async (q: string) => {
       try {
         const url = `https://rest.opensubtitles.org/search/query-${encodeURIComponent(q)}/sublanguageid-eng`;
-        const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 3500);
         const res = await fetch(url, {
           headers: { "User-Agent": "TemporaryUserAgent" },
-          signal: controller.signal,
+          signal: AbortSignal.timeout(1200),
         });
-        clearTimeout(timeout);
-
         if (res.ok) {
           const data = await res.json();
           if (Array.isArray(data) && data.length > 0) {
@@ -58,6 +54,14 @@ async function fetchFallbackSubtitles(title?: string, season: number = 1, ep: nu
           }
         }
       } catch (_) {}
+      return [];
+    };
+
+    const results = await Promise.allSettled(queries.map(fetchSingleQuery));
+    for (const r of results) {
+      if (r.status === "fulfilled" && r.value.length > 0) {
+        return r.value;
+      }
     }
   } catch (_) {}
   return [];

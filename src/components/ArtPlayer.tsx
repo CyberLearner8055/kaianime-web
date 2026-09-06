@@ -789,6 +789,22 @@ export default function ArtPlayer({
               artRef.notice.show = "+10s";
             },
           },
+          // Skip Intro +85s Button
+          {
+            name: "skip-intro-85",
+            position: "left",
+            index: 12,
+            html: `<button style="padding:2px 7px;font-size:11px;font-weight:800;letter-spacing:0.3px;background:rgba(37,99,235,0.8);color:#fff;border-radius:6px;border:none;cursor:pointer;line-height:1.4;display:inline-flex;align-items:center;gap:3px;margin-left:4px;" title="Skip Anime Intro (+85s)">
+              <span>⏩</span><span>+85s</span>
+            </button>`,
+            click: function (artRef: any) {
+              artRef.currentTime = Math.min(
+                artRef.duration || 0,
+                artRef.currentTime + 85
+              );
+              artRef.notice.show = "Skipped Intro (+85s)";
+            },
+          },
           // Dedicated Fullscreen Button (Guaranteed on Mobile & Desktop)
           {
             name: "fullscreen-toggle",

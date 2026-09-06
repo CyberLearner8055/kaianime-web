@@ -22,6 +22,7 @@ import { getAnimeByIdOrSlug, fetchAllAnime } from "@/lib/data";
 import { fetchAniListMetadata } from "@/lib/anilist";
 import ContentRail from "@/components/ContentRail";
 import EpisodeSelector from "./EpisodeSelector";
+import WatchlistButton from "@/components/WatchlistButton";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -256,6 +257,8 @@ export default async function AnimeDetailPage({ params }: PageProps) {
                 <Play className="w-5 h-5 fill-current" />
                 <span>Watch Episode 1 Now</span>
               </Link>
+
+              <WatchlistButton anime={anime} variant="button" />
 
               <a
                 href="https://animedrive.me"
