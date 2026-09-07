@@ -36,7 +36,7 @@ export default function DmcaPage() {
 
         <div className="pt-4 border-t border-white/10">
           <p className="text-xs text-slate-400">
-            Send all DMCA inquiries to: <span className="text-blue-400 font-bold">dmca@kaianime.me</span> or via our Contact Us page. Valid requests will be addressed promptly.
+            Send all DMCA inquiries to: <a href="mailto:kaianime@outlook.in" className="text-blue-400 font-bold hover:underline">kaianime@outlook.in</a> or via our <a href="/contact" className="text-blue-400 hover:underline">Contact Us</a> page. Valid requests will be addressed promptly.
           </p>
         </div>
       </div>

@@ -6,7 +6,11 @@
     "animedriveUrl": "https://animedrive.me",
     "apkDownloadUrl": "https://github.com/CyberLearner8055/animedrive-config/releases/download/V2.1/Anime.Drive.2.1.apk",
     "fallbackStreamUrl": "https://embedwish.com",
-    "telegramUrl": "https://t.me/animedrive",
+    "telegramUrl": "https://t.me/animeedrive",
+    "animedriveInstaUrl": "https://instagram.com/animedrive_me",
+    "kaianimeInstaUrl": "https://instagram.com/kaianime.me",
+    "kaianimeEmail": "kaianime@outlook.in",
+    "animedriveEmail": "animedrive@outlook.in",
     "whatsappUrl": "https://whatsapp.com/channel/animedrive",
     "discordUrl": "https://discord.gg/animedrive"
   },

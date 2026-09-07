@@ -46,6 +46,10 @@ export default function Footer() {
 
         {/* Footer Navigation Pages (NO CREDITS) */}
         <nav className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 py-3 text-slate-300 font-semibold text-xs border-b border-white/5">
+          <Link href="/anime-drive-network" className="text-emerald-400 hover:text-emerald-300 font-extrabold transition-colors flex items-center gap-1">
+            <span>🌐 Anime Drive Network</span>
+          </Link>
+          <span className="text-slate-600">•</span>
           <Link href="/contact" className="hover:text-blue-400 transition-colors">
             Contact Us
           </Link>
@@ -76,20 +80,18 @@ export default function Footer() {
         <div className="my-6 max-w-2xl mx-auto text-center px-4 py-3 rounded-xl bg-blue-950/20 border border-blue-500/20 shadow-lg shadow-blue-950/30">
           <p className="text-xs sm:text-sm text-slate-300 font-medium">
             <span className="text-white font-bold">KaiAnime</span> is the dedicated ad-free streaming platform of{" "}
-            <a
-              href={animedriveUrl}
-              target="_blank"
-              rel="noopener noreferrer"
+            <Link
+              href="/anime-drive-network"
               className="text-blue-400 hover:text-blue-300 font-extrabold underline decoration-blue-500/50 underline-offset-4 hover:decoration-blue-400 transition-colors"
             >
               AnimeDrive Network
-            </a>.
+            </Link>.
           </p>
         </div>
 
         {/* Copyright */}
         <div className="text-center pt-2 text-slate-400 text-xs">
-          <p>© 2026 <span className="text-white font-bold">KaiAnime</span> &bull; Part of <a href={animedriveUrl} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline font-semibold">AnimeDrive.me</a> Network.</p>
+          <p>© 2026 <span className="text-white font-bold">KaiAnime</span> &bull; Part of <Link href="/anime-drive-network" className="text-blue-400 hover:underline font-semibold">AnimeDrive.me</Link> Network.</p>
         </div>
       </div>
     </footer>

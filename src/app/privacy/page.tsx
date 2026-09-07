@@ -32,6 +32,14 @@ export default function PrivacyPage() {
         <p className="text-xs sm:text-sm leading-relaxed text-slate-300">
           KaiAnime is 100% Ad-Free. We do not inject malicious scripts, cryptocurrency miners, or third-party trackers.
         </p>
+
+        <h2 className="text-lg font-bold text-white pt-2">4. Contact Information</h2>
+        <p className="text-xs sm:text-sm leading-relaxed text-slate-300">
+          If you have any questions or suggestions about our Privacy Policy, do not hesitate to contact us at{" "}
+          <a href="mailto:kaianime@outlook.in" className="text-blue-400 font-bold hover:underline">
+            kaianime@outlook.in
+          </a>.
+        </p>
       </div>
     </div>
   );

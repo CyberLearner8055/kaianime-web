@@ -167,6 +167,9 @@ export default function SidebarDrawer({ isOpen, onClose }: SidebarDrawerProps) {
               <ChevronDown className="w-4 h-4 text-slate-400" />
             </summary>
             <div className="ak-drop-content">
+              <Link href="/anime-drive-network" onClick={onClose} className="ak-sub-link text-emerald-400 font-bold">
+                🌐 Anime Drive Network
+              </Link>
               <Link href="/dmca" onClick={onClose} className="ak-sub-link">
                 DMCA
               </Link>
