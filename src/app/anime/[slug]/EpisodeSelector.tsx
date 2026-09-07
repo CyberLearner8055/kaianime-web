@@ -110,23 +110,29 @@ export default function EpisodeSelector({
         </div>
       ) : (
         <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2.5 max-h-[460px] overflow-y-auto p-1 pr-2">
-          {filteredEpisodes.map((ep) => (
-            <Link
-              key={ep.id}
-              href={`/watch/${animeId}/${ep.number}`}
-              className="group relative flex flex-col items-center justify-center p-3 rounded-xl bg-white/5 hover:bg-blue-600 border border-white/10 hover:border-blue-500 transition-all duration-200 hover:scale-103 shadow-sm hover:shadow-lg hover:shadow-blue-900/30"
-            >
-              <div className="flex items-center gap-1">
-                <Play className="w-3 h-3 text-blue-400 group-hover:text-white fill-current opacity-75 group-hover:opacity-100" />
-                <span className="text-xs font-black text-white group-hover:text-white">
-                  EP {ep.number}
+          {filteredEpisodes.map((ep) => {
+            const epSeason = ep.season || selectedSeason;
+            const hasMultipleSeasons = seasons.length > 1 || (epSeason && epSeason > 1);
+            const watchUrl = `/watch/${animeId}/${ep.number}${hasMultipleSeasons ? `?season=${epSeason}` : ""}`;
+
+            return (
+              <Link
+                key={ep.id}
+                href={watchUrl}
+                className="group relative flex flex-col items-center justify-center p-3 rounded-xl bg-white/5 hover:bg-blue-600 border border-white/10 hover:border-blue-500 transition-all duration-200 hover:scale-103 shadow-sm hover:shadow-lg hover:shadow-blue-900/30"
+              >
+                <div className="flex items-center gap-1">
+                  <Play className="w-3 h-3 text-blue-400 group-hover:text-white fill-current opacity-75 group-hover:opacity-100" />
+                  <span className="text-xs font-black text-white group-hover:text-white">
+                    EP {ep.number}
+                  </span>
+                </div>
+                <span className="text-[10px] text-slate-400 group-hover:text-blue-100 font-medium mt-1">
+                  {isHindiDubbed ? "Dub & Sub" : "English Sub"}
                 </span>
-              </div>
-              <span className="text-[10px] text-slate-400 group-hover:text-blue-100 font-medium mt-1">
-                {isHindiDubbed ? "Dub & Sub" : "English Sub"}
-              </span>
-            </Link>
-          ))}
+              </Link>
+            );
+          })}
         </div>
       )}
     </div>

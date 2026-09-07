@@ -9,6 +9,7 @@ interface WatchHistoryItem {
   title: string;
   poster: string;
   episodeNumber: number;
+  season?: number;
   currentTime?: number;
   duration?: number;
   progressPercent?: number;
@@ -62,7 +63,7 @@ export default function ContinueWatchingSection() {
         {history.map((item) => (
           <Link
             key={item.id}
-            href={`/watch/${item.id}/${item.episodeNumber}`}
+            href={`/watch/${item.id}/${item.episodeNumber}${item.season && item.season > 1 ? `?season=${item.season}` : ""}`}
             className="group relative rounded-xl overflow-hidden bg-[#0d1017] border border-white/8 hover:border-blue-500/40 transition-all block shadow-lg"
           >
             <div className="aspect-[2/3] relative overflow-hidden">
@@ -78,7 +79,7 @@ export default function ContinueWatchingSection() {
                 </div>
               </div>
               <span className="absolute top-2 left-2 px-2 py-0.5 rounded bg-black/80 border border-white/10 text-[10px] font-extrabold text-white">
-                Ep {item.episodeNumber}
+                {item.season && item.season > 1 ? `S${item.season} ` : ""}Ep {item.episodeNumber}
               </span>
 
               {/* Progress bar across bottom of thumbnail */}

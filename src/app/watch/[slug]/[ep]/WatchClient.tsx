@@ -46,6 +46,18 @@ export default function WatchClient({ anime, episode, epNumber }: WatchClientPro
   const [copied, setCopied] = useState(false);
   const [shareUrl, setShareUrl] = useState("");
 
+  useEffect(() => {
+    if (currentEp?.season && currentEp.season !== activeSeason) {
+      setActiveSeason(currentEp.season);
+    }
+  }, [currentEp?.season]);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setShareUrl(window.location.href);
+    }
+  }, [epNumber, activeSeason]);
+
   const availableServers: { name: string; url: string }[] = (() => {
     if (!currentEp || !currentEp.servers) return [];
     if (Array.isArray(currentEp.servers)) {
@@ -222,6 +234,7 @@ export default function WatchClient({ anime, episode, epNumber }: WatchClientPro
         title: anime.title,
         poster: anime.poster,
         episodeNumber: epNumber,
+        season: currentEp?.season || 1,
         currentTime: found?.currentTime || 0,
         duration: found?.duration || 0,
         progressPercent: found?.progressPercent || 0,
@@ -230,7 +243,7 @@ export default function WatchClient({ anime, episode, epNumber }: WatchClientPro
       list = [historyItem, ...list.filter((x: any) => x.id !== anime.id)].slice(0, 15);
       localStorage.setItem("kaianime_history", JSON.stringify(list));
     } catch (_) {}
-  }, [anime.id, anime.title, anime.poster, epNumber]);
+  }, [anime.id, anime.title, anime.poster, epNumber, currentEp?.season]);
 
   const handleCopyLink = async () => {
     try {
@@ -243,22 +256,28 @@ export default function WatchClient({ anime, episode, epNumber }: WatchClientPro
     } catch (_) {}
   };
 
-  // Navigate to adjacent episodes
-  const prevEp = anime.episodes.find((e) => e.number === epNumber - 1);
-  const nextEp = anime.episodes.find((e) => e.number === epNumber + 1);
+  const seasonEpisodes = useMemo(() => {
+    return anime.episodes.filter((e) => (e.season || 1) === activeSeason);
+  }, [anime.episodes, activeSeason]);
+
+  // Navigate to adjacent episodes within active season
+  const prevEp = seasonEpisodes.find((e) => e.number === epNumber - 1);
+  const nextEp = seasonEpisodes.find((e) => e.number === epNumber + 1);
+
+  const getEpisodeWatchUrl = (targetEp: Episode) => {
+    const epSeason = targetEp.season || activeSeason;
+    const hasMultiple = (anime.seasons && anime.seasons.length > 1) || (epSeason && epSeason > 1);
+    return `/watch/${anime.id}/${targetEp.number}${hasMultiple ? `?season=${epSeason}` : ""}`;
+  };
 
   const handleVideoEnded = () => {
     if (nextEp) {
-      router.push(`/watch/${anime.id}/${nextEp.number}`);
+      router.push(getEpisodeWatchUrl(nextEp));
     }
   };
 
   const [epSearch, setEpSearch] = useState("");
   const CHUNK_SIZE = 50;
-
-  const seasonEpisodes = useMemo(() => {
-    return anime.episodes.filter((e) => (e.season || 1) === activeSeason);
-  }, [anime.episodes, activeSeason]);
 
   // Episode range chunking for long anime (Naruto, One Piece, etc.)
   const episodeRanges = useMemo(() => {
@@ -313,6 +332,12 @@ export default function WatchClient({ anime, episode, epNumber }: WatchClientPro
           <Link href={`/anime/${anime.id}`} className="hover:text-white transition-colors font-medium truncate max-w-[180px] sm:max-w-xs">
             {anime.title}
           </Link>
+          {currentEp?.season && currentEp.season > 1 && (
+            <>
+              <span>/</span>
+              <span className="text-slate-400 font-semibold">S{currentEp.season}</span>
+            </>
+          )}
           <span>/</span>
           <span className="text-blue-400 font-bold">EP {epNumber}</span>
         </div>
@@ -342,7 +367,7 @@ export default function WatchClient({ anime, episode, epNumber }: WatchClientPro
       {/* Primary Page H1 with rich target keywords */}
       <div className="mb-3 px-3 sm:px-0">
         <h1 className="text-base sm:text-xl md:text-2xl font-black text-white tracking-tight leading-snug">
-          Watch <span className="text-blue-500">{anime.title}</span> Episode {epNumber} Hindi Dubbed Online Free
+          Watch <span className="text-blue-500">{anime.title}</span> {currentEp?.season && currentEp.season > 1 ? `Season ${currentEp.season} ` : ""}Episode {epNumber} Hindi Dubbed Online Free
         </h1>
         <p className="text-[11px] sm:text-xs text-slate-400 mt-0.5 font-medium">
           Full HD 1080p &bull; 100% Ad-Free &bull; Multi-Audio (Hindi Dub, English Sub, Japanese)
@@ -399,7 +424,7 @@ export default function WatchClient({ anime, episode, epNumber }: WatchClientPro
       <div className="mt-3 p-2 sm:p-2.5 rounded-xl sm:rounded-2xl bg-[#0a0d14] border border-blue-500/20 shadow-lg shadow-blue-950/20 flex items-center justify-between gap-2 mx-3 sm:mx-0">
         {prevEp ? (
           <Link
-            href={`/watch/${anime.id}/${prevEp.number}`}
+            href={getEpisodeWatchUrl(prevEp)}
             className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-white text-xs sm:text-sm font-bold border border-white/10 transition-all active:scale-95 shadow-sm"
           >
             <ChevronLeft className="w-4 h-4 text-blue-400" />
@@ -419,13 +444,13 @@ export default function WatchClient({ anime, episode, epNumber }: WatchClientPro
         <div className="flex flex-col items-center justify-center px-2 py-0.5">
           <span className="text-[10px] uppercase tracking-wider text-slate-400 font-bold">Now Playing</span>
           <span className="text-xs sm:text-sm font-extrabold text-blue-400">
-            Episode {epNumber} <span className="text-slate-500 font-normal">/ {anime.episodesCount}</span>
+            Episode {epNumber} {currentEp?.season && currentEp.season > 1 ? `(S${currentEp.season}) ` : ""}<span className="text-slate-500 font-normal">/ {seasonEpisodes.length}</span>
           </span>
         </div>
 
         {nextEp ? (
           <Link
-            href={`/watch/${anime.id}/${nextEp.number}`}
+            href={getEpisodeWatchUrl(nextEp)}
             className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs sm:text-sm font-bold shadow-lg shadow-blue-600/40 transition-all active:scale-95"
           >
             <span>Next Ep</span>
@@ -616,17 +641,19 @@ export default function WatchClient({ anime, episode, epNumber }: WatchClientPro
         ) : (
           <div className="grid grid-cols-6 sm:grid-cols-8 md:grid-cols-10 lg:grid-cols-12 gap-1.5 max-h-64 overflow-y-auto pr-1">
             {filteredEpisodes.map((ep) => {
-              const isActive = ep.number === epNumber;
+              const isActive =
+                ep.number === epNumber &&
+                (ep.season || activeSeason) === (currentEp?.season || activeSeason);
               return (
                 <Link
-                  key={ep.number}
-                  href={`/watch/${anime.id}/${ep.number}`}
+                  key={ep.id || `${ep.season || activeSeason}-${ep.number}`}
+                  href={getEpisodeWatchUrl(ep)}
                   className={`h-9 flex items-center justify-center rounded-lg text-xs font-bold transition-all ${
                     isActive
                       ? "bg-blue-600 text-white shadow-lg shadow-blue-600/50 ring-2 ring-blue-400 scale-102 z-10"
                       : "bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white border border-white/5 active:scale-95"
                   }`}
-                  title={`Episode ${ep.number}`}
+                  title={`Episode ${ep.number}${ep.season ? ` (Season ${ep.season})` : ""}`}
                 >
                   {ep.number}
                 </Link>
@@ -640,10 +667,10 @@ export default function WatchClient({ anime, episode, epNumber }: WatchClientPro
       <div className="mt-4 sm:mt-6 p-4 sm:p-5 rounded-xl sm:rounded-2xl bg-[#0a0d14] border border-white/8 mx-3 sm:mx-0 text-xs text-slate-300 space-y-2">
         <h2 className="font-bold text-sm text-white flex items-center gap-2">
           <Film className="w-4 h-4 text-blue-400" />
-          <span>About {anime.title} Episode {epNumber} Streaming &amp; Download</span>
+          <span>About {anime.title} {currentEp?.season && currentEp.season > 1 ? `Season ${currentEp.season} ` : ""}Episode {epNumber} Streaming &amp; Download</span>
         </h2>
         <p className="text-slate-400 leading-relaxed text-xs">
-          Watch and download <strong>{anime.title} Episode {epNumber}</strong> online in Full HD with Hindi Dubbed audio and multi-language subtitles. Enjoy uninterrupted anime streaming completely free with 0 ads, 0 popups, and high-speed cloud servers on KaiAnime.me.
+          Watch and download <strong>{anime.title} {currentEp?.season && currentEp.season > 1 ? `Season ${currentEp.season} ` : ""}Episode {epNumber}</strong> online in Full HD with Hindi Dubbed audio and multi-language subtitles. Enjoy uninterrupted anime streaming completely free with 0 ads, 0 popups, and high-speed cloud servers on KaiAnime.me.
         </p>
       </div>
     </div>

@@ -6,10 +6,15 @@ import WatchClient from "./WatchClient";
 
 interface PageProps {
   params: Promise<{ slug: string; ep: string }>;
+  searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
-export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+export async function generateMetadata({ params, searchParams }: PageProps): Promise<Metadata> {
   const { slug, ep } = await params;
+  const search = searchParams ? await searchParams : undefined;
+  const rawSeason = typeof search?.season === "string" ? search.season : Array.isArray(search?.season) ? search.season[0] : undefined;
+  const querySeason = rawSeason ? parseInt(rawSeason, 10) : undefined;
+
   const anime = await getAnimeByIdOrSlug(slug);
 
   if (!anime) {
@@ -18,34 +23,52 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     };
   }
 
-  const epNum = parseInt(ep, 10) || 1;
-  const title = `Watch ${anime.title} Episode ${epNum} Online Free (${
+  let epNum = 1;
+  let seasonNum = querySeason;
+
+  const sMatch = ep.match(/^s(\d+)[-_]?(?:ep|e)?(\d+)$/i);
+  if (sMatch) {
+    seasonNum = parseInt(sMatch[1], 10);
+    epNum = parseInt(sMatch[2], 10);
+  } else {
+    epNum = parseInt(ep, 10) || 1;
+  }
+
+  const episode = seasonNum
+    ? anime.episodes.find((e) => (e.season || 1) === seasonNum && e.number === epNum)
+    : anime.episodes.find((e) => e.number === epNum);
+
+  const effectiveSeason = episode?.season || seasonNum || 1;
+  const seasonText = effectiveSeason > 1 ? ` Season ${effectiveSeason}` : "";
+  const seasonQuery = effectiveSeason > 1 ? `?season=${effectiveSeason}` : "";
+
+  const title = `Watch ${anime.title}${seasonText} Episode ${epNum} Online Free (${
     anime.isHindiDubbed ? "Hindi Dub" : "English Sub"
   })`;
-  const desc = `Stream ${anime.title} Episode ${epNum} in Full HD 1080p with zero ads and zero redirects. Multi-audio options available on KaiAnime.me.`;
+  const desc = `Stream ${anime.title}${seasonText} Episode ${epNum} in Full HD 1080p with zero ads and zero redirects. Multi-audio options available on KaiAnime.me.`;
 
   return {
     title,
     description: desc,
     keywords: [
-      `watch ${anime.title} episode ${epNum} hindi dub`,
-      `download ${anime.title} ep ${epNum} hindi dubbed 720p 1080p`,
-      `${anime.title} episode ${epNum} free stream online`,
-      `${anime.title} ep ${epNum} full hd 0 ads`,
-      `${anime.title} ep ${epNum} multi audio`,
-      `${anime.title} ep ${epNum} english sub`,
+      `watch ${anime.title}${seasonText} episode ${epNum} hindi dub`,
+      `download ${anime.title}${seasonText} ep ${epNum} hindi dubbed 720p 1080p`,
+      `${anime.title}${seasonText} episode ${epNum} free stream online`,
+      `${anime.title}${seasonText} ep ${epNum} full hd 0 ads`,
+      `${anime.title}${seasonText} ep ${epNum} multi audio`,
+      `${anime.title}${seasonText} ep ${epNum} english sub`,
       "watch anime hindi dub free",
       "kaianime",
       "kaianime.me",
       "anime drive",
     ],
     alternates: {
-      canonical: `https://kaianime.me/watch/${anime.id}/${epNum}`,
+      canonical: `https://kaianime.me/watch/${anime.id}/${epNum}${seasonQuery}`,
     },
     openGraph: {
       title,
       description: desc,
-      url: `https://kaianime.me/watch/${anime.id}/${epNum}`,
+      url: `https://kaianime.me/watch/${anime.id}/${epNum}${seasonQuery}`,
       images: [{ url: anime.banner || anime.poster, width: 1200, height: 630 }],
     },
     twitter: {
@@ -57,23 +80,47 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   };
 }
 
-export default async function WatchPage({ params }: PageProps) {
+export default async function WatchPage({ params, searchParams }: PageProps) {
   const { slug, ep } = await params;
+  const search = searchParams ? await searchParams : undefined;
+  const rawSeason = typeof search?.season === "string" ? search.season : Array.isArray(search?.season) ? search.season[0] : undefined;
+  const querySeason = rawSeason ? parseInt(rawSeason, 10) : undefined;
+
   const anime = await getAnimeByIdOrSlug(slug);
 
   if (!anime) {
     notFound();
   }
 
-  const epNum = parseInt(ep, 10) || 1;
-  const episode =
-    anime.episodes.find((e) => e.number === epNum) ||
-    anime.episodes[0] || {
-      id: `${anime.id}-ep${epNum}`,
-      number: epNum,
-      title: `Episode ${epNum}`,
-      servers: {},
-    };
+  let epNum = 1;
+  let seasonNum = querySeason;
+
+  const sMatch = ep.match(/^s(\d+)[-_]?(?:ep|e)?(\d+)$/i);
+  if (sMatch) {
+    seasonNum = parseInt(sMatch[1], 10);
+    epNum = parseInt(sMatch[2], 10);
+  } else {
+    epNum = parseInt(ep, 10) || 1;
+  }
+
+  let episode = seasonNum
+    ? anime.episodes.find((e) => (e.season || 1) === seasonNum && e.number === epNum)
+    : null;
+
+  if (!episode) {
+    episode =
+      anime.episodes.find((e) => e.number === epNum) ||
+      anime.episodes[0] || {
+        id: `${anime.id}-ep${epNum}`,
+        number: epNum,
+        title: `Episode ${epNum}`,
+        servers: {},
+      };
+  }
+
+  const effectiveSeason = episode.season || seasonNum || 1;
+  const seasonText = effectiveSeason > 1 ? ` Season ${effectiveSeason}` : "";
+  const seasonQuery = effectiveSeason > 1 ? `?season=${effectiveSeason}` : "";
 
   // Deterministic stable upload date to prevent Google Rich Snippets strip
   const safeYear = anime.year ? String(anime.year).replace(/\D/g, "") : "2024";
@@ -84,54 +131,80 @@ export default async function WatchPage({ params }: PageProps) {
   const videoSchema = {
     "@context": "https://schema.org",
     "@type": "VideoObject",
-    name: `Watch ${anime.title} Episode ${epNum} Hindi Dubbed Online Free - KaiAnime`,
-    description: `Stream and download ${anime.title} Episode ${epNum} in Full HD 1080p with Hindi Dubbed audio and English subtitles. 100% ad-free on KaiAnime.me.`,
+    name: `Watch ${anime.title}${seasonText} Episode ${epNum} Hindi Dubbed Online Free - KaiAnime`,
+    description: `Stream and download ${anime.title}${seasonText} Episode ${epNum} in Full HD 1080p with Hindi Dubbed audio and English subtitles. 100% ad-free on KaiAnime.me.`,
     thumbnailUrl: [anime.banner || anime.poster],
     uploadDate: stableUploadDate,
     duration: "PT24M",
     inLanguage: ["hi", "en", "ja"],
-    contentUrl: `https://kaianime.me/watch/${anime.id}/${epNum}`,
-    embedUrl: `https://kaianime.me/watch/${anime.id}/${epNum}`,
+    contentUrl: `https://kaianime.me/watch/${anime.id}/${epNum}${seasonQuery}`,
+    embedUrl: `https://kaianime.me/watch/${anime.id}/${epNum}${seasonQuery}`,
   };
 
   // BreadcrumbList Schema.org for Google Search Rich Navigation Snippets
+  const breadcrumbList = [
+    {
+      "@type": "ListItem",
+      position: 1,
+      name: "Home",
+      item: "https://kaianime.me",
+    },
+    {
+      "@type": "ListItem",
+      position: 2,
+      name: anime.title,
+      item: `https://kaianime.me/anime/${anime.id}`,
+    },
+  ];
+
+  if (effectiveSeason > 1) {
+    breadcrumbList.push({
+      "@type": "ListItem",
+      position: 3,
+      name: `Season ${effectiveSeason}`,
+      item: `https://kaianime.me/anime/${anime.id}?season=${effectiveSeason}`,
+    });
+    breadcrumbList.push({
+      "@type": "ListItem",
+      position: 4,
+      name: `Episode ${epNum}`,
+      item: `https://kaianime.me/watch/${anime.id}/${epNum}${seasonQuery}`,
+    });
+  } else {
+    breadcrumbList.push({
+      "@type": "ListItem",
+      position: 3,
+      name: `Episode ${epNum}`,
+      item: `https://kaianime.me/watch/${anime.id}/${epNum}`,
+    });
+  }
+
   const breadcrumbSchema = {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
-    itemListElement: [
-      {
-        "@type": "ListItem",
-        position: 1,
-        name: "Home",
-        item: "https://kaianime.me",
-      },
-      {
-        "@type": "ListItem",
-        position: 2,
-        name: anime.title,
-        item: `https://kaianime.me/anime/${anime.id}`,
-      },
-      {
-        "@type": "ListItem",
-        position: 3,
-        name: `Episode ${epNum}`,
-        item: `https://kaianime.me/watch/${anime.id}/${epNum}`,
-      },
-    ],
+    itemListElement: breadcrumbList,
   };
 
   // TVEpisode / Movie Schema for Structured Knowledge Graph
   const episodeSchema = {
     "@context": "https://schema.org",
     "@type": anime.type?.toLowerCase() === "movie" ? "Movie" : "TVEpisode",
-    name: `${anime.title} Episode ${epNum} Hindi Dubbed`,
+    name: `${anime.title}${seasonText} Episode ${epNum} Hindi Dubbed`,
     episodeNumber: epNum,
-    description: `Watch ${anime.title} Episode ${epNum} Hindi Dubbed in 1080p Full HD on KaiAnime.`,
+    description: `Watch ${anime.title}${seasonText} Episode ${epNum} Hindi Dubbed in 1080p Full HD on KaiAnime.`,
     partOfSeries: {
       "@type": "TVSeries",
       name: anime.title,
       url: `https://kaianime.me/anime/${anime.id}`,
     },
+    ...(effectiveSeason > 1
+      ? {
+          partOfSeason: {
+            "@type": "TVSeason",
+            seasonNumber: effectiveSeason,
+          },
+        }
+      : {}),
   };
 
   return (
@@ -148,7 +221,12 @@ export default async function WatchPage({ params }: PageProps) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(episodeSchema) }}
       />
-      <WatchClient anime={anime} episode={episode} epNumber={epNum} />
+      <WatchClient
+        key={`${anime.id}-s${effectiveSeason}-e${epNum}`}
+        anime={anime}
+        episode={episode}
+        epNumber={epNum}
+      />
     </div>
   );
 }
