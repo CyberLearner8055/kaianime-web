@@ -1,9 +1,8 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef } from "react";
 import Hls from "hls.js";
 import { SubtitleTrack } from "@/lib/types";
-import AnimeDrivePlayerLoading from "@/components/AnimeDrivePlayerLoading";
 
 interface ArtPlayerProps {
   url: string;
@@ -13,6 +12,7 @@ interface ArtPlayerProps {
   initialTime?: number;
   onTimeUpdate?: (currentTime: number, duration: number) => void;
   onEnded?: () => void;
+  onError?: () => void;
   className?: string;
 }
 
@@ -86,15 +86,14 @@ export default function ArtPlayer({
   initialTime,
   onTimeUpdate,
   onEnded,
+  onError,
   className = "",
 }: ArtPlayerProps) {
   const artContainerRef = useRef<HTMLDivElement>(null);
   const artInstanceRef = useRef<any>(null);
   const hlsInstanceRef = useRef<Hls | null>(null);
-  const [isBuffering, setIsBuffering] = useState(true);
 
   useEffect(() => {
-    setIsBuffering(true);
     if (!artContainerRef.current || !url) return;
 
     let art: any = null;
@@ -712,6 +711,8 @@ export default function ArtPlayer({
                 setupSubtitleSetting(artRef, hls, subtitles);
               };
 
+              let networkRetryCount = 0;
+
               hls.on(Hls.Events.MANIFEST_PARSED, function () {
                 artRef.notice.show = "Stream Ready • 0-Ads M3U8";
                 syncAllTracks();
@@ -733,7 +734,18 @@ export default function ArtPlayer({
                 if (data.fatal) {
                   switch (data.type) {
                     case Hls.ErrorTypes.NETWORK_ERROR:
-                      hls.startLoad();
+                      networkRetryCount++;
+                      if (networkRetryCount <= 2) {
+                        console.warn(`[ArtPlayer] Hls network error, retry ${networkRetryCount}/2...`);
+                        hls.startLoad();
+                      } else {
+                        console.error("[ArtPlayer] Hls network error retry limit reached.");
+                        try {
+                          hls.destroy();
+                        } catch (_) {}
+                        artRef.notice.show = "Stream error, switching server...";
+                        if (onError) onError();
+                      }
                       break;
                     case Hls.ErrorTypes.MEDIA_ERROR:
                       hls.recoverMediaError();
@@ -743,6 +755,7 @@ export default function ArtPlayer({
                         hls.destroy();
                       } catch (_) {}
                       artRef.notice.show = "Playback error, please switch server";
+                      if (onError) onError();
                       break;
                   }
                 }
@@ -892,15 +905,6 @@ export default function ArtPlayer({
         art.on("video:canplay", triggerResume);
       }
 
-      // Hide buffering overlay once stream connects and can play
-      const hideBuffering = () => {
-        setIsBuffering(false);
-      };
-      art.on("ready", hideBuffering);
-      art.on("video:canplay", hideBuffering);
-      art.on("video:playing", hideBuffering);
-      const safetyHideTimer = setTimeout(hideBuffering, 4000);
-
       // Track playback progress & synchronize custom subtitles
       let lastProgressReport = 0;
       art.on("video:timeupdate", () => {
@@ -923,125 +927,24 @@ export default function ArtPlayer({
         if (onEnded) onEnded();
       });
 
-      // YouTube-style 2X Speed Pill Indicator
-      const speedPill = document.createElement("div");
-      speedPill.className = "art-2x-speed-pill";
-      speedPill.innerHTML = `
-        <span class="art-2x-speed-icon">⏩</span>
-        <span class="art-2x-speed-text">2X Speed</span>
-      `;
-      if (art.template?.$player) {
-        art.template.$player.appendChild(speedPill);
-      }
-
-      // Gestures: Double-Tap Seek (10s) & YouTube-Style 2X Speed Long-Press
+      // Mobile Gestures: Clean Double-Tap Seek (10s) without interfering with single-tap controls
       let lastTapTime = 0;
       let lastTapX = 0;
 
-      let is2xHoldActive = false;
-      let holdPrevSpeed = 1.0;
-      let longPressTimer: NodeJS.Timeout | null = null;
-      let pressStartX = 0;
-      let pressStartY = 0;
-      let suppressClickUntil = 0;
-
-      const isInteractiveTarget = (target: HTMLElement | null): boolean => {
-        if (!target) return false;
-        return !!(
+      const handleTouchEnd = (e: TouchEvent) => {
+        const target = e.target as HTMLElement | null;
+        if (!target) return;
+        // Ignore taps on bottom controls, settings menu, buttons, etc.
+        if (
           target.closest(".art-bottom") ||
           target.closest(".art-controls") ||
           target.closest(".art-control") ||
           target.closest(".art-setting") ||
-          target.closest(".art-layer-top") ||
           target.closest(".art-contextmenus") ||
-          target.closest(".art-mask") ||
           target.closest("button") ||
           target.closest("input") ||
           target.closest("a")
-        );
-      };
-
-      const start2xHold = (x: number, y: number) => {
-        if (!art || !art.video) return;
-        pressStartX = x;
-        pressStartY = y;
-        if (longPressTimer) clearTimeout(longPressTimer);
-
-        longPressTimer = setTimeout(() => {
-          if (!art || !art.video) return;
-          is2xHoldActive = true;
-          holdPrevSpeed =
-            art.playbackRate && art.playbackRate > 0
-              ? art.playbackRate
-              : art.video.playbackRate || 1.0;
-          art.playbackRate = 2.0;
-          try {
-            art.video.playbackRate = 2.0;
-          } catch (_) {}
-          speedPill.classList.add("active");
-          if (typeof navigator !== "undefined" && navigator.vibrate) {
-            try {
-              navigator.vibrate(30);
-            } catch (_) {}
-          }
-        }, 350);
-      };
-
-      const check2xMove = (x: number, y: number) => {
-        if (longPressTimer && !is2xHoldActive) {
-          const dist = Math.hypot(x - pressStartX, y - pressStartY);
-          if (dist > 18) {
-            clearTimeout(longPressTimer);
-            longPressTimer = null;
-          }
-        }
-      };
-
-      const end2xHold = (e?: Event) => {
-        if (longPressTimer) {
-          clearTimeout(longPressTimer);
-          longPressTimer = null;
-        }
-
-        if (is2xHoldActive) {
-          is2xHoldActive = false;
-          if (art) {
-            art.playbackRate = holdPrevSpeed || 1.0;
-            try {
-              if (art.video) art.video.playbackRate = holdPrevSpeed || 1.0;
-            } catch (_) {}
-          }
-          speedPill.classList.remove("active");
-          lastTapTime = 0; // Prevent accidental double-tap seek trigger right after 2x
-          suppressClickUntil = Date.now() + 300;
-          if (e && e.cancelable) {
-            e.preventDefault();
-          }
-        }
-      };
-
-      const handleTouchStart = (e: TouchEvent) => {
-        const target = e.target as HTMLElement | null;
-        if (isInteractiveTarget(target)) return;
-        const touch = e.touches && e.touches[0];
-        if (!touch) return;
-        start2xHold(touch.clientX, touch.clientY);
-      };
-
-      const handleTouchMove = (e: TouchEvent) => {
-        const touch = e.touches && e.touches[0];
-        if (!touch) return;
-        check2xMove(touch.clientX, touch.clientY);
-      };
-
-      const handleTouchEnd = (e: TouchEvent) => {
-        const target = e.target as HTMLElement | null;
-        if (isInteractiveTarget(target)) return;
-
-        const wasHolding = is2xHoldActive;
-        end2xHold(e);
-
-        if (wasHolding) {
+        ) {
           return;
         }
 
@@ -1055,12 +958,13 @@ export default function ArtPlayer({
         const relX = x - rect.left;
         const width = rect.width;
 
-        if (delta > 50 && delta < 350 && Math.abs(x - lastTapX) < 80) {
-          if (relX < width * 0.4) {
+        // Double-tap detected (within 300ms, close to same position)
+        if (delta > 50 && delta < 320 && Math.abs(x - lastTapX) < 80) {
+          if (relX < width * 0.35) {
             art.currentTime = Math.max(0, art.currentTime - 10);
             art.notice.show = "−10s";
             e.preventDefault();
-          } else if (relX > width * 0.6) {
+          } else if (relX > width * 0.65) {
             art.currentTime = Math.min(art.duration || 0, art.currentTime + 10);
             art.notice.show = "+10s";
             e.preventDefault();
@@ -1072,59 +976,14 @@ export default function ArtPlayer({
         }
       };
 
-      const handleTouchCancel = () => {
-        end2xHold();
-      };
-
-      const handleMouseDown = (e: MouseEvent) => {
-        if (e.button !== 0) return;
-        const target = e.target as HTMLElement | null;
-        if (isInteractiveTarget(target)) return;
-        start2xHold(e.clientX, e.clientY);
-      };
-
-      const handleMouseMove = (e: MouseEvent) => {
-        check2xMove(e.clientX, e.clientY);
-      };
-
-      const handleMouseUp = (e: MouseEvent) => {
-        end2xHold(e);
-      };
-
-      const handleClickCapture = (e: MouseEvent) => {
-        if (Date.now() < suppressClickUntil) {
-          e.stopPropagation();
-          e.stopImmediatePropagation();
-          e.preventDefault();
-        }
-      };
-
       const container = artContainerRef.current;
       if (container) {
-        container.addEventListener("touchstart", handleTouchStart, { passive: true });
-        container.addEventListener("touchmove", handleTouchMove, { passive: true });
         container.addEventListener("touchend", handleTouchEnd, { passive: false });
-        container.addEventListener("touchcancel", handleTouchCancel, { passive: true });
-        container.addEventListener("mousedown", handleMouseDown);
-        container.addEventListener("click", handleClickCapture, true);
-        window.addEventListener("mousemove", handleMouseMove);
-        window.addEventListener("mouseup", handleMouseUp);
       }
 
       art.on("destroy", () => {
-        if (longPressTimer) clearTimeout(longPressTimer);
         if (container) {
-          container.removeEventListener("touchstart", handleTouchStart);
-          container.removeEventListener("touchmove", handleTouchMove);
           container.removeEventListener("touchend", handleTouchEnd);
-          container.removeEventListener("touchcancel", handleTouchCancel);
-          container.removeEventListener("mousedown", handleMouseDown);
-          container.removeEventListener("click", handleClickCapture, true);
-        }
-        window.removeEventListener("mousemove", handleMouseMove);
-        window.removeEventListener("mouseup", handleMouseUp);
-        if (speedPill.parentElement) {
-          speedPill.parentElement.removeChild(speedPill);
         }
       });
 
@@ -1145,9 +1004,6 @@ export default function ArtPlayer({
   return (
     <div className={`relative w-full h-full overflow-hidden ${className}`}>
       <div ref={artContainerRef} className="w-full h-full" />
-      {isBuffering && (
-        <AnimeDrivePlayerLoading className="pointer-events-none" />
-      )}
     </div>
   );
 }

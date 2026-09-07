@@ -87,7 +87,7 @@ export default function WatchClient({ anime, episode, epNumber }: WatchClientPro
     const controller = new AbortController();
     const timeoutId = setTimeout(() => {
       controller.abort();
-    }, 6500);
+    }, 4500);
 
     async function extract() {
       if (!rawServerUrl) {
@@ -364,7 +364,7 @@ export default function WatchClient({ anime, episode, epNumber }: WatchClientPro
           </div>
         ) : streamUrl ? (
           <ArtPlayer
-            key={`${streamUrl}-${subtitles.length}`}
+            key={`${streamUrl}-${selectedServerIdx}`}
             url={streamUrl}
             subtitles={subtitles}
             poster={anime.banner || anime.poster}
@@ -372,11 +372,19 @@ export default function WatchClient({ anime, episode, epNumber }: WatchClientPro
             initialTime={initialSeekTime}
             onTimeUpdate={handleTimeUpdate}
             onEnded={handleVideoEnded}
+            onError={() => {
+              console.warn("[WatchClient] Stream playback error in ArtPlayer. Failing over...");
+              if (selectedServerIdx < serverList.length - 1) {
+                setSelectedServerIdx((prev) => prev + 1);
+              } else {
+                setUseIframeFallback(true);
+              }
+            }}
           />
         ) : (
           <div className="w-full h-full flex flex-col items-center justify-center bg-[#07080c] text-slate-400 gap-3 p-6 text-center">
             <AlertCircle className="w-8 h-8 text-amber-400" />
-            <p className="text-xs sm:text-sm font-bold text-white">Direct extraction taking longer</p>
+            <p className="text-xs sm:text-sm font-bold text-white">Direct stream unavailable on this server</p>
             <button
               onClick={() => setUseIframeFallback(true)}
               className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs shadow-lg shadow-blue-600/30 transition-all"
@@ -445,16 +453,32 @@ export default function WatchClient({ anime, episode, epNumber }: WatchClientPro
           {serverList.map((s, idx) => (
             <button
               key={idx}
-              onClick={() => setSelectedServerIdx(idx)}
+              onClick={() => {
+                setUseIframeFallback(false);
+                setSelectedServerIdx(idx);
+              }}
               className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                idx === selectedServerIdx
+                !useIframeFallback && idx === selectedServerIdx
                   ? "bg-blue-600 text-white shadow-md shadow-blue-600/30"
                   : "bg-white/5 hover:bg-white/10 text-slate-300 border border-white/8"
               }`}
             >
-              Server {idx + 1}
+              {s.name || `Server ${idx + 1}`}
             </button>
           ))}
+          {rawServerUrl && (
+            <button
+              onClick={() => setUseIframeFallback((prev) => !prev)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all border ${
+                useIframeFallback
+                  ? "bg-purple-600 border-purple-500 text-white shadow-md shadow-purple-600/30"
+                  : "bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white border-white/8"
+              }`}
+              title="Toggle Web Player"
+            >
+              {useIframeFallback ? "Web Player (Active)" : "Web Player"}
+            </button>
+          )}
         </div>
       </div>
 

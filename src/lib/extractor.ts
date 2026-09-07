@@ -275,7 +275,44 @@ export async function extractStream(serverUrl: string): Promise<ExtractedStream 
     }
   }
 
-  // 4. Generic Web Scraper Fallback
+  // 4. Specialized Handler: animesalt.cx multi-lang player
+  if (trimmed.includes("animesalt.cx")) {
+    try {
+      const urlObj = new URL(trimmed);
+      const dataParam = urlObj.searchParams.get("data");
+      if (dataParam) {
+        let decodedJson = "";
+        try {
+          decodedJson = Buffer.from(decodeURIComponent(dataParam), "base64").toString("utf8");
+        } catch (_) {
+          decodedJson = Buffer.from(dataParam, "base64").toString("utf8");
+        }
+
+        if (decodedJson) {
+          const list = JSON.parse(decodedJson);
+          if (Array.isArray(list) && list.length > 0) {
+            // Priority: Hindi Dub first, then English Sub, then first available
+            const chosen =
+              list.find((item: any) => String(item.language || "").toLowerCase().includes("hin")) ||
+              list.find((item: any) => String(item.language || "").toLowerCase().includes("eng")) ||
+              list[0];
+
+            const innerLink = chosen?.link || "";
+            if (innerLink && innerLink !== trimmed) {
+              const innerStream = await extractStream(innerLink);
+              if (innerStream) {
+                return innerStream;
+              }
+            }
+          }
+        }
+      }
+    } catch (err) {
+      console.warn("[Extractor] animesalt extraction failed:", err);
+    }
+  }
+
+  // 5. Generic Web Scraper Fallback
   try {
     const urlObj = new URL(trimmed);
     const origin = urlObj.origin;
