@@ -923,20 +923,128 @@ export default function ArtPlayer({
         if (onEnded) onEnded();
       });
 
-      // Desktop Double-Click / Touch Seek Gestures
+      // YouTube-style 2X Speed Pill Indicator
+      const speedPill = document.createElement("div");
+      speedPill.className = "art-2x-speed-pill";
+      speedPill.innerHTML = `
+        <span class="art-2x-speed-icon">⏩</span>
+        <span class="art-2x-speed-text">2X Speed</span>
+      `;
+      if (art.template?.$player) {
+        art.template.$player.appendChild(speedPill);
+      }
+
+      // Gestures: Double-Tap Seek (10s) & YouTube-Style 2X Speed Long-Press
       let lastTapTime = 0;
       let lastTapX = 0;
 
+      let is2xHoldActive = false;
+      let holdPrevSpeed = 1.0;
+      let longPressTimer: NodeJS.Timeout | null = null;
+      let pressStartX = 0;
+      let pressStartY = 0;
+      let suppressClickUntil = 0;
+
+      const isInteractiveTarget = (target: HTMLElement | null): boolean => {
+        if (!target) return false;
+        return !!(
+          target.closest(".art-bottom") ||
+          target.closest(".art-controls") ||
+          target.closest(".art-control") ||
+          target.closest(".art-setting") ||
+          target.closest(".art-layer-top") ||
+          target.closest(".art-contextmenus") ||
+          target.closest(".art-mask") ||
+          target.closest("button") ||
+          target.closest("input") ||
+          target.closest("a")
+        );
+      };
+
+      const start2xHold = (x: number, y: number) => {
+        if (!art || !art.video) return;
+        pressStartX = x;
+        pressStartY = y;
+        if (longPressTimer) clearTimeout(longPressTimer);
+
+        longPressTimer = setTimeout(() => {
+          if (!art || !art.video) return;
+          is2xHoldActive = true;
+          holdPrevSpeed =
+            art.playbackRate && art.playbackRate > 0
+              ? art.playbackRate
+              : art.video.playbackRate || 1.0;
+          art.playbackRate = 2.0;
+          try {
+            art.video.playbackRate = 2.0;
+          } catch (_) {}
+          speedPill.classList.add("active");
+          if (typeof navigator !== "undefined" && navigator.vibrate) {
+            try {
+              navigator.vibrate(30);
+            } catch (_) {}
+          }
+        }, 350);
+      };
+
+      const check2xMove = (x: number, y: number) => {
+        if (longPressTimer && !is2xHoldActive) {
+          const dist = Math.hypot(x - pressStartX, y - pressStartY);
+          if (dist > 18) {
+            clearTimeout(longPressTimer);
+            longPressTimer = null;
+          }
+        }
+      };
+
+      const end2xHold = (e?: Event) => {
+        if (longPressTimer) {
+          clearTimeout(longPressTimer);
+          longPressTimer = null;
+        }
+
+        if (is2xHoldActive) {
+          is2xHoldActive = false;
+          if (art) {
+            art.playbackRate = holdPrevSpeed || 1.0;
+            try {
+              if (art.video) art.video.playbackRate = holdPrevSpeed || 1.0;
+            } catch (_) {}
+          }
+          speedPill.classList.remove("active");
+          lastTapTime = 0; // Prevent accidental double-tap seek trigger right after 2x
+          suppressClickUntil = Date.now() + 300;
+          if (e && e.cancelable) {
+            e.preventDefault();
+          }
+        }
+      };
+
+      const handleTouchStart = (e: TouchEvent) => {
+        const target = e.target as HTMLElement | null;
+        if (isInteractiveTarget(target)) return;
+        const touch = e.touches && e.touches[0];
+        if (!touch) return;
+        start2xHold(touch.clientX, touch.clientY);
+      };
+
+      const handleTouchMove = (e: TouchEvent) => {
+        const touch = e.touches && e.touches[0];
+        if (!touch) return;
+        check2xMove(touch.clientX, touch.clientY);
+      };
+
       const handleTouchEnd = (e: TouchEvent) => {
         const target = e.target as HTMLElement | null;
-        if (
-          target &&
-          (target.closest(".art-bottom") ||
-            target.closest(".art-setting") ||
-            target.closest(".art-layer-top"))
-        ) {
+        if (isInteractiveTarget(target)) return;
+
+        const wasHolding = is2xHoldActive;
+        end2xHold(e);
+
+        if (wasHolding) {
           return;
         }
+
         const touch = e.changedTouches && e.changedTouches[0];
         if (!touch) return;
         const now = Date.now();
@@ -964,11 +1072,60 @@ export default function ArtPlayer({
         }
       };
 
+      const handleTouchCancel = () => {
+        end2xHold();
+      };
+
+      const handleMouseDown = (e: MouseEvent) => {
+        if (e.button !== 0) return;
+        const target = e.target as HTMLElement | null;
+        if (isInteractiveTarget(target)) return;
+        start2xHold(e.clientX, e.clientY);
+      };
+
+      const handleMouseMove = (e: MouseEvent) => {
+        check2xMove(e.clientX, e.clientY);
+      };
+
+      const handleMouseUp = (e: MouseEvent) => {
+        end2xHold(e);
+      };
+
+      const handleClickCapture = (e: MouseEvent) => {
+        if (Date.now() < suppressClickUntil) {
+          e.stopPropagation();
+          e.stopImmediatePropagation();
+          e.preventDefault();
+        }
+      };
+
       const container = artContainerRef.current;
-      container.addEventListener("touchend", handleTouchEnd, { passive: false });
+      if (container) {
+        container.addEventListener("touchstart", handleTouchStart, { passive: true });
+        container.addEventListener("touchmove", handleTouchMove, { passive: true });
+        container.addEventListener("touchend", handleTouchEnd, { passive: false });
+        container.addEventListener("touchcancel", handleTouchCancel, { passive: true });
+        container.addEventListener("mousedown", handleMouseDown);
+        container.addEventListener("click", handleClickCapture, true);
+        window.addEventListener("mousemove", handleMouseMove);
+        window.addEventListener("mouseup", handleMouseUp);
+      }
 
       art.on("destroy", () => {
-        container.removeEventListener("touchend", handleTouchEnd);
+        if (longPressTimer) clearTimeout(longPressTimer);
+        if (container) {
+          container.removeEventListener("touchstart", handleTouchStart);
+          container.removeEventListener("touchmove", handleTouchMove);
+          container.removeEventListener("touchend", handleTouchEnd);
+          container.removeEventListener("touchcancel", handleTouchCancel);
+          container.removeEventListener("mousedown", handleMouseDown);
+          container.removeEventListener("click", handleClickCapture, true);
+        }
+        window.removeEventListener("mousemove", handleMouseMove);
+        window.removeEventListener("mouseup", handleMouseUp);
+        if (speedPill.parentElement) {
+          speedPill.parentElement.removeChild(speedPill);
+        }
       });
 
       artInstanceRef.current = art;
