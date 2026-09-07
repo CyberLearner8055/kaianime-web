@@ -94,11 +94,59 @@ export default async function WatchPage({ params }: PageProps) {
     embedUrl: `https://kaianime.me/watch/${anime.id}/${epNum}`,
   };
 
+  // BreadcrumbList Schema.org for Google Search Rich Navigation Snippets
+  const breadcrumbSchema = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      {
+        "@type": "ListItem",
+        position: 1,
+        name: "Home",
+        item: "https://kaianime.me",
+      },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: anime.title,
+        item: `https://kaianime.me/anime/${anime.id}`,
+      },
+      {
+        "@type": "ListItem",
+        position: 3,
+        name: `Episode ${epNum}`,
+        item: `https://kaianime.me/watch/${anime.id}/${epNum}`,
+      },
+    ],
+  };
+
+  // TVEpisode / Movie Schema for Structured Knowledge Graph
+  const episodeSchema = {
+    "@context": "https://schema.org",
+    "@type": anime.type?.toLowerCase() === "movie" ? "Movie" : "TVEpisode",
+    name: `${anime.title} Episode ${epNum} Hindi Dubbed`,
+    episodeNumber: epNum,
+    description: `Watch ${anime.title} Episode ${epNum} Hindi Dubbed in 1080p Full HD on KaiAnime.`,
+    partOfSeries: {
+      "@type": "TVSeries",
+      name: anime.title,
+      url: `https://kaianime.me/anime/${anime.id}`,
+    },
+  };
+
   return (
     <div className="min-h-screen">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(videoSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(episodeSchema) }}
       />
       <WatchClient anime={anime} episode={episode} epNumber={epNum} />
     </div>

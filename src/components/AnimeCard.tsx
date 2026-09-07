@@ -23,7 +23,7 @@ export default function AnimeCard({ anime, priority = false, rank }: AnimeCardPr
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={anime.poster}
-          alt={anime.title}
+          alt={`${anime.title} Hindi Dubbed - KaiAnime`}
           loading={priority ? "eager" : "lazy"}
           className="h-full w-full object-cover transition-transform duration-500 will-change-transform group-hover:scale-108"
         />
