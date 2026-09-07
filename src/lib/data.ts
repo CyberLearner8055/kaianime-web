@@ -8,7 +8,8 @@ const APPSCRIPT_TRENDING_URL =
 // In-memory cache for ultra-fast server responses
 let memoryCache: Anime[] | null = null;
 let lastFetchTime = 0;
-const CACHE_TTL = 24 * 3600 * 1000; // 24 hours RAM cache
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes RAM cache (auto-refreshes new GitHub posts)
+const DISK_CACHE_TTL = 5 * 60 * 1000; // 5 minutes /tmp disk cache TTL
 
 let trendingCache: Anime[] | null = null;
 let lastTrendingFetch = 0;
@@ -200,14 +201,38 @@ export function isOngoingAnime(title: string, slug?: string, liveSet?: Set<strin
   return false;
 }
 
-export async function fetchAllAnime(): Promise<Anime[]> {
+/**
+ * Resolves the latest Git commit SHA on the main branch of CyberLearner8055/appdata.
+ * Fetching raw content by commit SHA completely bypasses Fastly CDN & edge stale cache.
+ */
+async function getLatestCommitSha(): Promise<string | null> {
+  try {
+    const res = await fetch("https://api.github.com/repos/CyberLearner8055/appdata/commits/main", {
+      headers: {
+        "User-Agent": "KaiAnime-Web/1.0",
+        "Accept": "application/vnd.github.v3+json",
+        ...(process.env.GITHUB_TOKEN ? { Authorization: `Bearer ${process.env.GITHUB_TOKEN}` } : {}),
+      },
+      next: { revalidate: 120, tags: ["github-commit"] },
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (data?.sha) return String(data.sha);
+    }
+  } catch (err) {
+    console.warn("[DataService] Could not resolve commit SHA from GitHub API:", err);
+  }
+  return null;
+}
+
+export async function fetchAllAnime(force = false): Promise<Anime[]> {
   const now = Date.now();
-  if (memoryCache && now - lastFetchTime < CACHE_TTL) {
+  if (!force && memoryCache && now - lastFetchTime < CACHE_TTL) {
     return memoryCache;
   }
 
-  // 1. Ultra-fast local /tmp disk cache check (5ms on serverless)
-  if (typeof window === "undefined") {
+  // 1. Ultra-fast local /tmp disk cache check (5-minute TTL to ensure fresh episodes appear)
+  if (!force && typeof window === "undefined") {
     try {
       const fsModule = eval("require")("fs");
       const pathModule = eval("require")("path");
@@ -216,30 +241,45 @@ export async function fetchAllAnime(): Promise<Anime[]> {
       if (fsModule.existsSync(tmpPath)) {
         const cachedStr = fsModule.readFileSync(tmpPath, "utf8");
         const parsedCached = JSON.parse(cachedStr);
-        if (Array.isArray(parsedCached) && parsedCached.length > 0) {
-          const verified = parsedCached.map((a: Anime) =>
+        const cachedTimestamp = parsedCached?.timestamp || 0;
+        const list = Array.isArray(parsedCached) ? parsedCached : parsedCached?.data;
+        if (Array.isArray(list) && list.length > 0 && now - cachedTimestamp < DISK_CACHE_TTL) {
+          const verified = list.map((a: Anime) =>
             isOngoingAnime(a.title, a.id) ? { ...a, status: "Ongoing" } : a
           );
           memoryCache = verified;
-          lastFetchTime = now;
+          lastFetchTime = cachedTimestamp || now;
           return memoryCache;
         }
       }
     } catch {}
   }
 
-  const [siteConfig, liveOngoing] = await Promise.all([
-    loadSiteConfig(),
+  const [siteConfig, liveOngoing, latestSha] = await Promise.all([
+    loadSiteConfig(force),
     getLiveOngoingTitles(),
+    getLatestCommitSha(),
   ]);
-  const currentDataUrl = siteConfig.dataUrl || DATA_URL;
+
+  // Build target URL: if commit SHA is resolved, use immutable raw URL to 100% bypass Fastly/CDN stale cache!
+  let currentDataUrl = siteConfig.dataUrl || DATA_URL;
+  if (latestSha && currentDataUrl.includes("CyberLearner8055/appdata")) {
+    currentDataUrl = `https://raw.githubusercontent.com/CyberLearner8055/appdata/${latestSha}/anime-data.json`;
+  } else {
+    const separator = currentDataUrl.includes("?") ? "&" : "?";
+    currentDataUrl = `${currentDataUrl}${separator}_t=${now}`;
+  }
 
   try {
     const res = await fetch(currentDataUrl, {
+      cache: "no-store",
       headers: {
         "Accept": "application/json",
         "User-Agent": "KaiAnime-Web/1.0",
+        "Cache-Control": "no-cache, no-store, must-revalidate",
+        "Pragma": "no-cache",
       },
+      next: { tags: ["anime-catalog"], revalidate: 180 },
     });
 
     if (!res.ok) {
@@ -357,14 +397,20 @@ export async function fetchAllAnime(): Promise<Anime[]> {
     memoryCache = parsed;
     lastFetchTime = now;
 
-    // Persist parsed data to /tmp for other serverless lambdas
+    // Persist parsed data to /tmp with timestamp & commitSha for serverless instances
     if (typeof window === "undefined") {
       try {
         const fsModule = eval("require")("fs");
         const pathModule = eval("require")("path");
         const osModule = eval("require")("os");
         const tmpPath = pathModule.join(osModule.tmpdir(), "kaianime_catalog_cache.json");
-        fsModule.writeFileSync(tmpPath, JSON.stringify(parsed), "utf8");
+        const cachePayload = {
+          timestamp: now,
+          commitSha: latestSha || "",
+          count: parsed.length,
+          data: parsed,
+        };
+        fsModule.writeFileSync(tmpPath, JSON.stringify(cachePayload), "utf8");
       } catch {}
     }
 

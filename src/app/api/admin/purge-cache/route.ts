@@ -15,16 +15,20 @@ export async function POST() {
     purgeAnimeDataCache();
     try {
       revalidateTag('anime-catalog');
+      revalidateTag('github-commit');
       revalidateTag('app-trending');
       revalidateTag('running-anime');
       revalidateTag('site-config');
       revalidatePath('/', 'layout');
+      revalidatePath('/home', 'page');
+      revalidatePath('/anime/[slug]', 'page');
+      revalidatePath('/watch/[slug]/[ep]', 'page');
     } catch (e) {
       console.warn('revalidateTag warning:', e);
     }
 
-    // 2. Immediate fresh fetch from GitHub Raw URL
-    const freshData = await fetchAllAnime();
+    // 2. Immediate fresh fetch from GitHub Raw URL using newest commit SHA
+    const freshData = await fetchAllAnime(true);
     const config = getSiteConfig();
 
     return NextResponse.json(

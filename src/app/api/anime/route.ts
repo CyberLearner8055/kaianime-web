@@ -4,11 +4,12 @@ import { fetchAllAnime, searchAnime, getTrendingAnime, getHindiDubbedAnime } fro
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
+    const force = searchParams.get("force") === "true" || searchParams.get("purge") === "true";
     const query = searchParams.get("q");
     const genre = searchParams.get("genre");
     const trending = searchParams.get("trending");
     const hindi = searchParams.get("hindi");
-    let animeList = await fetchAllAnime();
+    let animeList = await fetchAllAnime(force);
 
     if (query) {
       animeList = await searchAnime(query);
@@ -30,7 +31,9 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(animeList.slice(0, limit), {
       headers: {
-        "Cache-Control": "public, s-maxage=120, stale-while-revalidate=300",
+        "Cache-Control": force
+          ? "no-cache, no-store, must-revalidate"
+          : "public, s-maxage=60, stale-while-revalidate=120",
       },
     });
   } catch (error: any) {
