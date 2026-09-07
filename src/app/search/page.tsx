@@ -4,11 +4,11 @@ import { fetchAllAnime, getAllGenres } from "@/lib/data";
 import SearchClient from "./SearchClient";
 
 export const metadata: Metadata = {
-  title: "Browse & Search Anime Catalog | KaiAnime.site",
+  title: "Browse & Search Anime Catalog | KaiAnime.me",
   description:
-    "Search and browse our entire database of anime series and movies. Filter by genre, Hindi dub, rating, and watch with zero ads on KaiAnime.site.",
+    "Search and browse our entire database of anime series and movies. Filter by genre, Hindi dub, rating, and watch with zero ads on KaiAnime.me.",
   alternates: {
-    canonical: "https://kaianime.site/search",
+    canonical: "https://kaianime.me/search",
   },
 };
 

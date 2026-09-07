@@ -469,7 +469,7 @@ export default function WatchClient({ anime, episode, epNumber }: WatchClientPro
           {/* WhatsApp 1-Tap Button */}
           <a
             href={`https://api.whatsapp.com/send?text=${encodeURIComponent(
-              `Watch ${anime.title} Episode ${epNumber} Hindi Dubbed Free in Full HD:\n${shareUrl || "https://kaianime.site"}`
+              `Watch ${anime.title} Episode ${epNumber} Hindi Dubbed Free in Full HD:\n${shareUrl || "https://kaianime.me"}`
             )}`}
             target="_blank"
             rel="noopener noreferrer"
@@ -484,7 +484,7 @@ export default function WatchClient({ anime, episode, epNumber }: WatchClientPro
 
           {/* Telegram 1-Tap Button */}
           <a
-            href={`https://t.me/share/url?url=${encodeURIComponent(shareUrl || "https://kaianime.site")}&text=${encodeURIComponent(
+            href={`https://t.me/share/url?url=${encodeURIComponent(shareUrl || "https://kaianime.me")}&text=${encodeURIComponent(
               `Watch ${anime.title} Episode ${epNumber} Hindi Dubbed Free in Full HD on KaiAnime!`
             )}`}
             target="_blank"
@@ -619,7 +619,7 @@ export default function WatchClient({ anime, episode, epNumber }: WatchClientPro
           <span>About {anime.title} Episode {epNumber} Streaming &amp; Download</span>
         </h2>
         <p className="text-slate-400 leading-relaxed text-xs">
-          Watch and download <strong>{anime.title} Episode {epNumber}</strong> online in Full HD with Hindi Dubbed audio and multi-language subtitles. Enjoy uninterrupted anime streaming completely free with 0 ads, 0 popups, and high-speed cloud servers on KaiAnime.site.
+          Watch and download <strong>{anime.title} Episode {epNumber}</strong> online in Full HD with Hindi Dubbed audio and multi-language subtitles. Enjoy uninterrupted anime streaming completely free with 0 ads, 0 popups, and high-speed cloud servers on KaiAnime.me.
         </p>
       </div>
     </div>

@@ -8,7 +8,7 @@ export const metadata: Metadata = {
   description:
     "Explore the largest library of high-quality Anime, Movies in Hindi Dub, Tamil, Telugu & Regional Audio with 100% Ad-Free streaming.",
   alternates: {
-    canonical: "https://kaianime.site/",
+    canonical: "https://kaianime.me/",
   },
 };
 

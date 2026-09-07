@@ -2,8 +2,8 @@ import React from "react";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "DMCA Disclaimer | KaiAnime.site",
-  description: "DMCA copyright policy and takedown request procedures for KaiAnime.site.",
+  title: "DMCA Disclaimer | KaiAnime.me",
+  description: "DMCA copyright policy and takedown request procedures for KaiAnime.me.",
 };
 
 export default function DmcaPage() {
@@ -15,7 +15,7 @@ export default function DmcaPage() {
         </h1>
 
         <p className="text-sm leading-relaxed">
-          <strong className="text-white font-bold">KaiAnime.site</strong> is an online indexing platform and does not host or store any media files on its own servers. All content shown or linked is provided by non-affiliated third-party streaming services. We index links across the web in a manner similar to search engines such as Google and Bing.
+          <strong className="text-white font-bold">KaiAnime.me</strong> is an online indexing platform and does not host or store any media files on its own servers. All content shown or linked is provided by non-affiliated third-party streaming services. We index links across the web in a manner similar to search engines such as Google and Bing.
         </p>
 
         <div className="p-4 rounded-xl bg-blue-600/10 border border-blue-500/20 text-xs sm:text-sm text-blue-200 leading-relaxed">
@@ -28,7 +28,7 @@ export default function DmcaPage() {
         <h2 className="text-lg font-bold text-white pt-2">How to Submit a Takedown Request:</h2>
         <ul className="list-disc list-inside space-y-2 text-xs sm:text-sm text-slate-300">
           <li>Identify the copyrighted work claimed to have been infringed.</li>
-          <li>Provide exact URLs on KaiAnime.site pointing to the disputed content.</li>
+          <li>Provide exact URLs on KaiAnime.me pointing to the disputed content.</li>
           <li>Provide sufficient contact information (name, address, telephone number, and email address).</li>
           <li>Include a statement of good faith belief that the disputed use is not authorized by the copyright owner.</li>
           <li>Include a statement made under penalty of perjury that the information in the notification is accurate.</li>
@@ -36,7 +36,7 @@ export default function DmcaPage() {
 
         <div className="pt-4 border-t border-white/10">
           <p className="text-xs text-slate-400">
-            Send all DMCA inquiries to: <span className="text-blue-400 font-bold">dmca@kaianime.site</span> or via our Contact Us page. Valid requests will be addressed promptly.
+            Send all DMCA inquiries to: <span className="text-blue-400 font-bold">dmca@kaianime.me</span> or via our Contact Us page. Valid requests will be addressed promptly.
           </p>
         </div>
       </div>

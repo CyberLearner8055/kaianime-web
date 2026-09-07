@@ -14,6 +14,7 @@ interface WatchlistButtonProps {
     episodesCount?: number;
     genres?: string[];
     type?: string;
+    status?: string;
     year?: string | number;
   };
   variant?: "icon" | "button" | "pill";
@@ -49,6 +50,7 @@ export default function WatchlistButton({
       episodesCount: anime.episodesCount,
       genres: anime.genres,
       type: anime.type,
+      status: anime.status,
       year: anime.year,
     });
     setActive(newState);

@@ -3,11 +3,11 @@ import type { Metadata } from "next";
 import WatchlistClient from "./WatchlistClient";
 
 export const metadata: Metadata = {
-  title: "My Watchlist | KaiAnime.site",
+  title: "My Watchlist | KaiAnime.me",
   description:
-    "View and manage your saved anime watchlist on KaiAnime.site. Stream your favorite series and movies anytime in Full HD with 0 ads.",
+    "View and manage your saved anime watchlist on KaiAnime.me. Stream your favorite series and movies anytime in Full HD with 0 ads.",
   alternates: {
-    canonical: "https://kaianime.site/watchlist",
+    canonical: "https://kaianime.me/watchlist",
   },
 };
 

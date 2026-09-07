@@ -3,10 +3,10 @@ import "@/styles/globals.css";
 import AppLayoutWrapper from "@/components/AppLayoutWrapper";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://kaianime.site"),
+  metadataBase: new URL("https://kaianime.me"),
   title: {
     default: "KaiAnime - Watch Anime Online in Ultra HD | 100% Ad-Free",
-    template: "%s | KaiAnime.site",
+    template: "%s | KaiAnime.me",
   },
   description:
     "Stream your favorite anime series and movies online in Ultra HD with Hindi Dub and English Subtitles. 100% free with 100% ad-free streaming, zero popups, and direct high-speed video playback.",
@@ -15,6 +15,7 @@ export const metadata: Metadata = {
     "anime hindi dub",
     "free anime streaming",
     "kaianime",
+    "kaianime.me",
     "anime drive",
     "no ads anime",
     "anime hd subbed",
@@ -32,13 +33,13 @@ export const metadata: Metadata = {
   },
   authors: [{ name: "Anime Drive Network", url: "https://animedrive.me" }],
   creator: "Anime Drive",
-  publisher: "KaiAnime.site",
+  publisher: "KaiAnime.me",
   openGraph: {
     title: "KaiAnime - Watch Anime Online in Ultra HD (100% Ad-Free)",
     description:
       "Watch latest anime episodes in Full HD with multi-audio Hindi dub and English subtitles. 100% ad-free, zero popups, lightning-fast streaming.",
-    url: "https://kaianime.site",
-    siteName: "KaiAnime.site",
+    url: "https://kaianime.me",
+    siteName: "KaiAnime.me",
     images: [
       {
         url: "/logo.png",

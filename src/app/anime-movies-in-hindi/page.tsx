@@ -18,15 +18,16 @@ export const metadata: Metadata = {
     "ghibli movies in hindi",
     "suzume hindi dub",
     "your name hindi dub",
+    "kaianime.me",
   ],
   alternates: {
-    canonical: "https://kaianime.site/anime-movies-in-hindi",
+    canonical: "https://kaianime.me/anime-movies-in-hindi",
   },
   openGraph: {
     title: "Watch Anime Movies in Hindi Dubbed Online Free in 1080p | KaiAnime",
     description:
       "Watch popular anime movies in Hindi Dubbed and Multi-Audio for free in 1080p Ultra HD with zero ads.",
-    url: "https://kaianime.site/anime-movies-in-hindi",
+    url: "https://kaianime.me/anime-movies-in-hindi",
     type: "website",
   },
   twitter: {

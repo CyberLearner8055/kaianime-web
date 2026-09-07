@@ -18,7 +18,7 @@ import {
   CheckCircle2,
   Info,
 } from "lucide-react";
-import { getAnimeByIdOrSlug, fetchAllAnime } from "@/lib/data";
+import { getAnimeByIdOrSlug, fetchAllAnime, isOngoingAnime } from "@/lib/data";
 import { fetchAniListMetadata } from "@/lib/anilist";
 import ContentRail from "@/components/ContentRail";
 import EpisodeSelector from "./EpisodeSelector";
@@ -34,7 +34,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   if (!anime) {
     return {
-      title: "Anime Not Found | KaiAnime.site",
+      title: "Anime Not Found | KaiAnime.me",
     };
   }
 
@@ -43,7 +43,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   }) in Full HD`;
   const desc = `Stream ${anime.title} full episodes in 1080p Ultra HD with ${
     anime.isHindiDubbed ? "Hindi Dubbed Audio and English Subtitles" : "Original Japanese Audio and English Subtitles"
-  }. 100% free streaming with 0 ads, 0 popups, and high-speed servers on KaiAnime.site.`;
+  }. 100% free streaming with 0 ads, 0 popups, and high-speed servers on KaiAnime.me.`;
 
   return {
     title,
@@ -56,15 +56,16 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       `${anime.title} stream full hd`,
       `${anime.title} free anime stream`,
       "kaianime",
+      "kaianime.me",
       "anime drive",
     ],
     alternates: {
-      canonical: `https://kaianime.site/anime/${anime.id}`,
+      canonical: `https://kaianime.me/anime/${anime.id}`,
     },
     openGraph: {
       title,
       description: desc,
-      url: `https://kaianime.site/anime/${anime.id}`,
+      url: `https://kaianime.me/anime/${anime.id}`,
       images: [{ url: anime.banner || anime.poster, width: 1200, height: 630 }],
     },
     twitter: {
@@ -110,19 +111,19 @@ export default async function AnimeDetailPage({ params }: PageProps) {
         "@type": "ListItem",
         position: 1,
         name: "Home",
-        item: "https://kaianime.site",
+        item: "https://kaianime.me",
       },
       {
         "@type": "ListItem",
         position: 2,
         name: "Anime Catalog",
-        item: "https://kaianime.site/search",
+        item: "https://kaianime.me/search",
       },
       {
         "@type": "ListItem",
         position: 3,
         name: anime.title,
-        item: `https://kaianime.site/anime/${anime.id}`,
+        item: `https://kaianime.me/anime/${anime.id}`,
       },
     ],
   };
@@ -155,7 +156,7 @@ export default async function AnimeDetailPage({ params }: PageProps) {
         name: `Where can I watch ${anime.title} online for free without ads?`,
         acceptedAnswer: {
           "@type": "Answer",
-          text: `You can stream all episodes of ${anime.title} in Ultra HD on KaiAnime.site with 0 ads, 0 popups, and high-speed streaming servers.`,
+          text: `You can stream all episodes of ${anime.title} in Ultra HD on KaiAnime.me with 0 ads, 0 popups, and high-speed streaming servers.`,
         },
       },
       {
@@ -173,7 +174,7 @@ export default async function AnimeDetailPage({ params }: PageProps) {
         name: `How many episodes and seasons are there in ${anime.title}?`,
         acceptedAnswer: {
           "@type": "Answer",
-          text: `${anime.title} features ${anime.episodesCount} episodes across ${anime.seasons.length} season(s), available to stream online on KaiAnime.site.`,
+          text: `${anime.title} features ${anime.episodesCount} episodes across ${anime.seasons.length} season(s), available to stream online on KaiAnime.me.`,
         },
       },
       {
@@ -242,7 +243,7 @@ export default async function AnimeDetailPage({ params }: PageProps) {
                       Multi Audio
                     </span>
                   )}
-                  {anime.status === "Ongoing" && (
+                  {(anime.status === "Ongoing" || isOngoingAnime(anime.title, anime.id)) && (
                     <span className="px-2 py-0.5 text-[11px] font-black bg-amber-400 text-black rounded-lg shadow-lg flex items-center gap-1">
                       <span className="w-1.5 h-1.5 rounded-full bg-black animate-pulse" />
                       Ongoing
@@ -286,7 +287,8 @@ export default async function AnimeDetailPage({ params }: PageProps) {
                 {(() => {
                   const isOngoing =
                     anime.status === "Ongoing" ||
-                    enriched?.status === "RELEASING";
+                    enriched?.status === "RELEASING" ||
+                    isOngoingAnime(anime.title, anime.id);
                   const displayStatus = isOngoing ? "Ongoing" : "Completed";
                   return (
                     <span className={`font-bold flex items-center gap-1.5 ${isOngoing ? "text-amber-400" : "text-emerald-400"}`}>
@@ -455,7 +457,7 @@ export default async function AnimeDetailPage({ params }: PageProps) {
                 <div className="border-b border-white/5 pb-3">
                   <h3 className="font-bold text-white text-sm">Where can I watch {anime.title} online for free without ads?</h3>
                   <p className="text-slate-300 mt-1 leading-relaxed">
-                    You can stream {anime.title} in Full HD 1080p directly on KaiAnime.site. We eliminate all popups, redirects, and banner ads so you can enjoy pure anime streaming.
+                    You can stream {anime.title} in Full HD 1080p directly on KaiAnime.me. We eliminate all popups, redirects, and banner ads so you can enjoy pure anime streaming.
                   </p>
                 </div>
                 <div className="border-b border-white/5 pb-3">

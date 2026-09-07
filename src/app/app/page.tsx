@@ -17,7 +17,7 @@ export const metadata: Metadata = {
   description:
     "Download the official Anime Drive Android App. Enjoy 100% ad-free anime streaming in Hindi, Tamil, Telugu and English with ultra-fast servers and offline downloads.",
   alternates: {
-    canonical: "https://kaianime.site/app",
+    canonical: "https://kaianime.me/app",
   },
 };
 

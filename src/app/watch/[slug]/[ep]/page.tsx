@@ -14,7 +14,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   if (!anime) {
     return {
-      title: "Episode Not Found | KaiAnime.site",
+      title: "Episode Not Found | KaiAnime.me",
     };
   }
 
@@ -22,7 +22,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const title = `Watch ${anime.title} Episode ${epNum} Online Free (${
     anime.isHindiDubbed ? "Hindi Dub" : "English Sub"
   })`;
-  const desc = `Stream ${anime.title} Episode ${epNum} in Full HD 1080p with zero ads and zero redirects. Multi-audio options available on KaiAnime.site.`;
+  const desc = `Stream ${anime.title} Episode ${epNum} in Full HD 1080p with zero ads and zero redirects. Multi-audio options available on KaiAnime.me.`;
 
   return {
     title,
@@ -36,15 +36,16 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       `${anime.title} ep ${epNum} english sub`,
       "watch anime hindi dub free",
       "kaianime",
+      "kaianime.me",
       "anime drive",
     ],
     alternates: {
-      canonical: `https://kaianime.site/watch/${anime.id}/${epNum}`,
+      canonical: `https://kaianime.me/watch/${anime.id}/${epNum}`,
     },
     openGraph: {
       title,
       description: desc,
-      url: `https://kaianime.site/watch/${anime.id}/${epNum}`,
+      url: `https://kaianime.me/watch/${anime.id}/${epNum}`,
       images: [{ url: anime.banner || anime.poster, width: 1200, height: 630 }],
     },
     twitter: {
@@ -84,13 +85,13 @@ export default async function WatchPage({ params }: PageProps) {
     "@context": "https://schema.org",
     "@type": "VideoObject",
     name: `Watch ${anime.title} Episode ${epNum} Hindi Dubbed Online Free - KaiAnime`,
-    description: `Stream and download ${anime.title} Episode ${epNum} in Full HD 1080p with Hindi Dubbed audio and English subtitles. 100% ad-free on KaiAnime.site.`,
+    description: `Stream and download ${anime.title} Episode ${epNum} in Full HD 1080p with Hindi Dubbed audio and English subtitles. 100% ad-free on KaiAnime.me.`,
     thumbnailUrl: [anime.banner || anime.poster],
     uploadDate: stableUploadDate,
     duration: "PT24M",
     inLanguage: ["hi", "en", "ja"],
-    contentUrl: `https://kaianime.site/watch/${anime.id}/${epNum}`,
-    embedUrl: `https://kaianime.site/watch/${anime.id}/${epNum}`,
+    contentUrl: `https://kaianime.me/watch/${anime.id}/${epNum}`,
+    embedUrl: `https://kaianime.me/watch/${anime.id}/${epNum}`,
   };
 
   return (

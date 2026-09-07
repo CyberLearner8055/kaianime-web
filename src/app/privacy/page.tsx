@@ -2,8 +2,8 @@ import React from "react";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Privacy Policy | KaiAnime.site",
-  description: "Privacy policy and data protection practices at KaiAnime.site.",
+  title: "Privacy Policy | KaiAnime.me",
+  description: "Privacy policy and data protection practices at KaiAnime.me.",
 };
 
 export default function PrivacyPage() {
@@ -15,7 +15,7 @@ export default function PrivacyPage() {
         </h1>
 
         <p className="text-sm leading-relaxed">
-          At <strong className="text-white font-bold">KaiAnime.site</strong>, your privacy is of utmost importance. This Privacy Policy document outlines the types of information that is collected and recorded by KaiAnime and how we utilize it.
+          At <strong className="text-white font-bold">KaiAnime.me</strong>, your privacy is of utmost importance. This Privacy Policy document outlines the types of information that is collected and recorded by KaiAnime and how we utilize it.
         </p>
 
         <h2 className="text-lg font-bold text-white pt-2">1. Information We Collect</h2>

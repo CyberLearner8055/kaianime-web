@@ -18,14 +18,15 @@ export const metadata: Metadata = {
     "top hindi dubbed anime",
     "trending hindi anime",
     "kaianime trending",
+    "kaianime.me",
   ],
   alternates: {
-    canonical: "https://kaianime.site/trending-anime-india",
+    canonical: "https://kaianime.me/trending-anime-india",
   },
   openGraph: {
     title: "Trending Anime in India - Top Watched Hindi Dubbed Series & Movies",
     description: "Discover the top trending anime series and movies in India right now. Watch with zero ads on KaiAnime.",
-    url: "https://kaianime.site/trending-anime-india",
+    url: "https://kaianime.me/trending-anime-india",
     type: "website",
   },
   twitter: {

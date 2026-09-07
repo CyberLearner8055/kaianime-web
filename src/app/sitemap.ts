@@ -4,7 +4,7 @@ import { fetchAllAnime } from "@/lib/data";
 export const dynamic = "force-dynamic";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = "https://kaianime.site";
+  const baseUrl = "https://kaianime.me";
   const animeList = await fetchAllAnime();
 
   // High-priority Category & Static routes

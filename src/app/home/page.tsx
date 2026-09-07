@@ -22,7 +22,7 @@ export const metadata: Metadata = {
   description:
     "Stream your favorite anime in Hindi, Tamil, Telugu & English with multi-audio, high-speed servers, and 100% ad-free experience.",
   alternates: {
-    canonical: "https://kaianime.site/home",
+    canonical: "https://kaianime.me/home",
   },
 };
 

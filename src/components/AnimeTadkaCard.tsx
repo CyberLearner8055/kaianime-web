@@ -32,14 +32,22 @@ export default function AnimeTadkaCard({ anime, priority = false }: AnimeTadkaCa
     <div className="anime-card group">
       <Link href={`/anime/${anime.id}`} className="block">
         <div className="poster-box relative aspect-[2/3] rounded-xl overflow-hidden bg-[#0a0d14] border border-white/8 group-hover:border-blue-500/50 transition-all duration-300">
-          {/* Top-Left Season/Episode or Movie Badge */}
-          <span className={`badge se-badge absolute top-2 left-2 px-2 py-0.5 text-[10px] font-extrabold rounded-md z-10 ${
-            isMovie
-              ? "bg-blue-600 text-white"
-              : "bg-black/80 backdrop-blur-md text-white border border-white/10"
-          }`}>
-            {seBadgeText}
-          </span>
+          {/* Top-Left Season/Episode or Movie Badge & Live Ongoing Pill */}
+          <div className="absolute top-2 left-2 flex flex-col items-start gap-1 z-10 pointer-events-none">
+            {anime.status === "Ongoing" && (
+              <span className="px-1.5 py-0.5 text-[10px] font-black bg-amber-400 text-black rounded-md shadow-md flex items-center gap-1 backdrop-blur-md">
+                <span className="w-1.5 h-1.5 rounded-full bg-black animate-pulse" />
+                Ongoing
+              </span>
+            )}
+            <span className={`badge se-badge px-2 py-0.5 text-[10px] font-extrabold rounded-md ${
+              isMovie
+                ? "bg-blue-600 text-white"
+                : "bg-black/80 backdrop-blur-md text-white border border-white/10"
+            }`}>
+              {seBadgeText}
+            </span>
+          </div>
 
           {/* Top-Right Audio Badge: Guaranteed Hindi / Multi Audio */}
           <span className="badge meta-badge absolute top-2 right-2 px-2 py-0.5 text-[10px] font-extrabold rounded-md z-10 bg-blue-600 text-white shadow-md">

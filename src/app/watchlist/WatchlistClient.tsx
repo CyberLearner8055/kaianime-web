@@ -27,7 +27,7 @@ function itemToAnime(item: WatchlistItem): Anime {
     genres: item.genres || ["Action", "Adventure"],
     poster: item.poster,
     type: item.type || "TV",
-    status: "Completed",
+    status: item.status || "Ongoing",
     rating: item.rating || 8.5,
     episodesCount: item.episodesCount || 1,
     episodes: [{ id: `${item.id}-1`, number: 1, title: "Episode 1", servers: {} }],

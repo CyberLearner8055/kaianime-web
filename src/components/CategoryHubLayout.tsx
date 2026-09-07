@@ -50,13 +50,13 @@ export default function CategoryHubLayout({
         "@type": "ListItem",
         position: 1,
         name: "Home",
-        item: "https://kaianime.site",
+        item: "https://kaianime.me",
       },
       {
         "@type": "ListItem",
         position: 2,
         name: breadcrumbName,
-        item: `https://kaianime.site${basePath}`,
+        item: `https://kaianime.me${basePath}`,
       },
     ],
   };
@@ -66,7 +66,7 @@ export default function CategoryHubLayout({
     "@type": "CollectionPage",
     name: title,
     description: subtitle,
-    url: `https://kaianime.site${basePath}`,
+    url: `https://kaianime.me${basePath}`,
     numberOfItems: totalItems,
   };
 

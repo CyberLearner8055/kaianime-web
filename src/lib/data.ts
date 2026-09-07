@@ -20,6 +20,8 @@ export function purgeAnimeDataCache(): void {
   lastTrendingFetch = 0;
   runningCache = null;
   lastRunningFetch = 0;
+  ongoingTitlesCache = null;
+  lastOngoingTitlesFetch = 0;
   if (typeof window === "undefined") {
     try {
       const fsModule = eval("require")("fs");
@@ -47,34 +49,156 @@ export function slugify(text: string): string {
     .replace(/(^-|-$)/g, "");
 }
 
+export function cleanMatchTitle(s: string): string {
+  let t = String(s || "").toLowerCase().trim();
+  t = t.replace(/\(.*?\)|\[.*?\]/g, "");
+  t = t.replace(/\s*(season\s*\d+|part\s*\d+|s\d+).*$/i, "");
+  t = t.replace(/[^a-z0-9]/g, "");
+  return t;
+}
+
 export const KNOWN_ONGOING_KEYWORDS = [
-  "mushoku-tensei",
+  // Live Airing & Scheduled Ongoing Titles
+  "grand-blue",
   "welcome-to-demon-school",
   "iruma-kun",
   "jojo",
+  "liar-game",
+  "clevatess",
+  "dating-sim",
+  "trapped-in-a-dating-sim",
+  "hana-kimi",
+  "thunder-3",
+  "tomb-raider",
+  "smoking-behind",
+  "supermarket",
+  "heavy-knight",
+  "exiled-heavy",
+  "chainsmoker-cat",
+  "last-stand",
+  "10-year-long",
+  "legend-after",
+  "slime",
+  "reincarnated-as-a-slime",
+  "elusive-samurai",
+  "black-torch",
+  "bleach",
+  "calamity",
+  "daemons-of-the-shadow-realm",
+  "shadow-realm",
+  "jaadugar",
+  "witch-in-mongolia",
+  "hanaori",
+  "mushoku-tensei",
+  "jobless-reincarnation",
+  "sparks-of-tomorrow",
   "captain-tsubasa",
+  "ramparts-of-ice",
+  "ranma",
+  "blue-box",
+  "rezero",
+  "starting-life-in-another-world",
+  "classroom-of-the-elite",
+  "detective-is-already-dead",
+  // Major ongoing & seasonal releases
   "solo-leveling",
   "one-piece",
-  "bleach",
   "tower-of-god",
   "blue-lock",
   "dandadan",
   "fairy-tail",
   "kaiju-no-8",
-  "rezero",
+  "kaiju",
   "shangri-la",
   "wind-breaker",
   "spy-x-family",
-  "slime",
-  "classroom-of-the-elite",
   "my-hero-academia",
   "dragon-ball-daima",
+  "daima",
   "sakamoto-days",
   "chainsaw-man",
-  "sparks-of-tomorrow",
   "demon-slayer",
   "jujutsu-kaisen",
+  "danmachi",
+  "pick-up-girls-in-a-dungeon",
+  "boruto",
+  "dr-stone",
+  "doctor-stone",
+  "oshi-no-ko",
+  "undead-unluck",
+  "rurouni-kenshin",
+  "mashle",
+  "frieren",
+  "hells-paradise",
+  "delicious-in-dungeon",
 ];
+
+let ongoingTitlesCache: Set<string> | null = null;
+let lastOngoingTitlesFetch = 0;
+
+export async function getLiveOngoingTitles(): Promise<Set<string>> {
+  const now = Date.now();
+  if (ongoingTitlesCache && now - lastOngoingTitlesFetch < 30 * 60 * 1000) {
+    return ongoingTitlesCache;
+  }
+
+  const set = new Set<string>();
+  try {
+    const res = await fetch("https://medal-chronicle-initial-fee.trycloudflare.com/", {
+      next: { revalidate: 1800, tags: ["ongoing-titles"] },
+      headers: { "User-Agent": "AnimeDrive-Web/1.0" },
+      signal: AbortSignal.timeout(1800),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      const list = [...(data.ongoing || []), ...(data.upcoming || [])];
+      for (const item of list) {
+        const raw = String(item.title || "").trim();
+        if (raw) {
+          set.add(cleanMatchTitle(raw));
+        }
+      }
+    }
+  } catch (err) {
+    // Tunnel or network error fallback
+  }
+
+  if (set.size > 0) {
+    ongoingTitlesCache = set;
+    lastOngoingTitlesFetch = now;
+  }
+  return ongoingTitlesCache || set;
+}
+
+export function isOngoingAnime(title: string, slug?: string, liveSet?: Set<string>): boolean {
+  const clean = cleanMatchTitle(title);
+  const cleanSlug = (slug || slugify(title)).toLowerCase();
+  const lowerTitle = title.toLowerCase();
+
+  const set = liveSet || ongoingTitlesCache;
+  if (set && set.size > 0 && clean) {
+    for (const apiTitle of set) {
+      if (apiTitle && (clean === apiTitle || clean.includes(apiTitle) || apiTitle.includes(clean))) {
+        return true;
+      }
+    }
+  }
+
+  if (
+    KNOWN_ONGOING_KEYWORDS.some((k) => {
+      const cleanKey = k.replace(/[^a-z0-9]/g, "");
+      return (
+        cleanSlug.includes(k) ||
+        lowerTitle.includes(k.replace(/-/g, " ")) ||
+        (clean && cleanKey && clean.includes(cleanKey))
+      );
+    })
+  ) {
+    return true;
+  }
+
+  return false;
+}
 
 export async function fetchAllAnime(): Promise<Anime[]> {
   const now = Date.now();
@@ -93,7 +217,10 @@ export async function fetchAllAnime(): Promise<Anime[]> {
         const cachedStr = fsModule.readFileSync(tmpPath, "utf8");
         const parsedCached = JSON.parse(cachedStr);
         if (Array.isArray(parsedCached) && parsedCached.length > 0) {
-          memoryCache = parsedCached;
+          const verified = parsedCached.map((a: Anime) =>
+            isOngoingAnime(a.title, a.id) ? { ...a, status: "Ongoing" } : a
+          );
+          memoryCache = verified;
           lastFetchTime = now;
           return memoryCache;
         }
@@ -101,7 +228,10 @@ export async function fetchAllAnime(): Promise<Anime[]> {
     } catch {}
   }
 
-  const siteConfig = await loadSiteConfig();
+  const [siteConfig, liveOngoing] = await Promise.all([
+    loadSiteConfig(),
+    getLiveOngoingTitles(),
+  ]);
   const currentDataUrl = siteConfig.dataUrl || DATA_URL;
 
   try {
@@ -196,13 +326,12 @@ export async function fetchAllAnime(): Promise<Anime[]> {
         status:
           siteConfig.animeOverrides?.[cleanSlug]?.status ||
           siteConfig.animeOverrides?.[rawId]?.status ||
-          (item.status === "Ongoing" || item.status === "RELEASING"
-            ? "Ongoing"
-            : KNOWN_ONGOING_KEYWORDS.some(
-                (k) => cleanSlug.includes(k) || rawTitle.toLowerCase().includes(k.replace(/-/g, " "))
-              )
-            ? "Ongoing"
-            : item.section === "Ongoing" || item.section === "running"
+          (item.status === "Ongoing" ||
+          item.status === "RELEASING" ||
+          item.section === "Ongoing" ||
+          item.section === "running" ||
+          genres.some((g) => g.toLowerCase().includes("ongoing") || g.toLowerCase().includes("airing")) ||
+          isOngoingAnime(rawTitle, cleanSlug, liveOngoing)
             ? "Ongoing"
             : "Completed"),
         rating,
@@ -266,9 +395,7 @@ export async function getAnimeByIdOrSlug(identifier: string): Promise<Anime | nu
   const cleanSlug = slugify(found.title);
   const isOngoing =
     found.status === "Ongoing" ||
-    KNOWN_ONGOING_KEYWORDS.some(
-      (k) => cleanSlug.includes(k) || found.title.toLowerCase().includes(k.replace(/-/g, " "))
-    );
+    isOngoingAnime(found.title, cleanSlug);
 
   if (isOngoing) {
     return { ...found, status: "Ongoing" };
@@ -363,14 +490,6 @@ export async function getSpotlightAnime(): Promise<Anime[]> {
   }
 
   return getAppTrendingAnime();
-}
-
-function cleanMatchTitle(s: string): string {
-  let t = s.toLowerCase().trim();
-  t = t.replace(/\(.*?\)|\[.*?\]/g, "");
-  t = t.replace(/\s*(season\s*\d+|part\s*\d+|s\d+).*$/i, "");
-  t = t.replace(/[^a-z0-9]/g, "");
-  return t;
 }
 
 let runningCache: Anime[] | null = null;

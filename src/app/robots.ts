@@ -7,6 +7,6 @@ export default function robots(): MetadataRoute.Robots {
       allow: "/",
       disallow: ["/api/"],
     },
-    sitemap: "https://kaianime.site/sitemap.xml",
+    sitemap: "https://kaianime.me/sitemap.xml",
   };
 }

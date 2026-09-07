@@ -230,7 +230,7 @@ export default function LandingClient({ animeList }: LandingClientProps) {
 
           <div className="flex flex-wrap items-center gap-3">
             <a
-              href="https://api.whatsapp.com/send?text=Watch+or+Download+Anime+100%25+Ad-Free+on+KaiAnime.site+%F0%9F%94%A5%20https%3A%2F%2Fkaianime.site"
+              href="https://api.whatsapp.com/send?text=Watch+or+Download+Anime+100%25+Ad-Free+on+KaiAnime.me+%F0%9F%94%A5%20https%3A%2F%2Fkaianime.me"
               target="_blank"
               rel="noopener noreferrer"
               className="share-icon-btn wa w-10 h-10 rounded-xl bg-white/5 hover:bg-[#25d366] flex items-center justify-center border border-white/10 transition-colors text-white"
@@ -240,7 +240,7 @@ export default function LandingClient({ animeList }: LandingClientProps) {
             </a>
 
             <a
-              href="https://t.me/share/url?url=https%3A%2F%2Fkaianime.site&text=Watch+Anime+Free+with+Hindi+Dub+100%25+Ad-Free%21"
+              href="https://t.me/share/url?url=https%3A%2F%2Fkaianime.me&text=Watch+Anime+Free+with+Hindi+Dub+100%25+Ad-Free%21"
               target="_blank"
               rel="noopener noreferrer"
               className="share-icon-btn tg w-10 h-10 rounded-xl bg-white/5 hover:bg-[#0088cc] flex items-center justify-center border border-white/10 transition-colors text-white"

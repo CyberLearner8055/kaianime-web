@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
   title: "Watch Hindi Dubbed Anime Online Free in Full HD (1080p) | KaiAnime",
   description:
-    "Stream 700+ Hindi dubbed anime series & movies online for free in 1080p Full HD with zero ads. Daily latest episodes in Hindi audio, fast streaming, and download on KaiAnime.site.",
+    "Stream 700+ Hindi dubbed anime series & movies online for free in 1080p Full HD with zero ads. Daily latest episodes in Hindi audio, fast streaming, and download on KaiAnime.me.",
   keywords: [
     "hindi dubbed anime",
     "watch hindi dubbed anime online free",
@@ -18,15 +18,16 @@ export const metadata: Metadata = {
     "hindi dub anime site",
     "anime hindi 1080p",
     "kaianime hindi",
+    "kaianime.me",
   ],
   alternates: {
-    canonical: "https://kaianime.site/hindi-dubbed-anime",
+    canonical: "https://kaianime.me/hindi-dubbed-anime",
   },
   openGraph: {
     title: "Watch Hindi Dubbed Anime Online Free in Full HD | KaiAnime",
     description:
       "Stream 700+ Hindi dubbed anime series & movies online for free in 1080p Full HD with zero ads.",
-    url: "https://kaianime.site/hindi-dubbed-anime",
+    url: "https://kaianime.me/hindi-dubbed-anime",
     type: "website",
   },
   twitter: {
@@ -52,7 +53,7 @@ export default async function HindiDubbedAnimePage({ searchParams }: PageProps) 
     {
       question: "Where can I watch Hindi dubbed anime online for free?",
       answer:
-        "You can stream over 700+ Hindi dubbed anime series and movies completely free on KaiAnime.site with zero ads, zero interruptions, and ultra-fast high-speed streaming servers.",
+        "You can stream over 700+ Hindi dubbed anime series and movies completely free on KaiAnime.me with zero ads, zero interruptions, and ultra-fast high-speed streaming servers.",
     },
     {
       question: "Are all episodes available in Full HD 1080p quality?",

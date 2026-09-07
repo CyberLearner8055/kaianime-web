@@ -10,6 +10,7 @@ export interface WatchlistItem {
   episodesCount?: number;
   genres?: string[];
   type?: string;
+  status?: string;
   year?: string | number;
   addedAt: number;
 }

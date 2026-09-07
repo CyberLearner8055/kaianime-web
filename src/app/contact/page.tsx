@@ -3,7 +3,7 @@ import { Metadata } from "next";
 import { Mail, Send, ShieldCheck } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "Contact Us | KaiAnime.site",
+  title: "Contact Us | KaiAnime.me",
   description: "Get in touch with the KaiAnime and Anime Drive Network team.",
 };
 
@@ -26,7 +26,7 @@ export default function ContactPage() {
             </div>
             <div>
               <p className="text-xs text-slate-400">Email Support</p>
-              <p className="text-sm font-bold text-white">support@kaianime.site</p>
+              <p className="text-sm font-bold text-white">support@kaianime.me</p>
             </div>
           </div>
 
