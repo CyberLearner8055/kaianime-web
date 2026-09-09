@@ -59,7 +59,7 @@ export default function DownloadClient({
     setDownloadStarted(true);
     const link = document.createElement("a");
     link.href = apkUrl;
-    link.setAttribute("download", "Anime.Drive.2.1.apk");
+    link.setAttribute("download", "Anime.Drive.2.1.1.apk");
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -75,7 +75,7 @@ export default function DownloadClient({
         {/* Top Badge */}
         <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-600/20 border border-blue-500/30 text-blue-400 text-xs font-black uppercase tracking-wider mb-6">
           <Sparkles className="w-3.5 h-3.5" />
-          <span>Official Android Release • Version 2.1</span>
+          <span>Official Android Release • Version 2.1.1</span>
         </div>
 
         {/* Main Heading */}
@@ -119,12 +119,12 @@ export default function DownloadClient({
           <div className="mt-5">
             <a
               href={apkUrl}
-              download="Anime.Drive.2.1.apk"
+              download="Anime.Drive.2.1.1.apk"
               onClick={() => setDownloadStarted(true)}
               className="inline-flex items-center justify-center gap-3 w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-blue-600 via-sky-500 to-blue-600 hover:from-blue-500 hover:to-sky-400 text-white font-black text-base shadow-xl shadow-blue-600/40 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200"
             >
               <Download className="w-5 h-5 animate-bounce" />
-              <span>Click to Direct Download (54.5 MB)</span>
+              <span>Click to Direct Download (54.7 MB)</span>
             </a>
           </div>
 
@@ -191,11 +191,11 @@ export default function DownloadClient({
               </div>
               <h3 className="text-base font-bold text-white mb-2">Download the APK</h3>
               <p className="text-xs text-slate-400 leading-relaxed">
-                Click the blue Download button above. The file <code className="text-blue-300 font-mono">Anime.Drive.2.1.apk</code> will be saved to your phone&apos;s Downloads folder.
+                Click the blue Download button above. The file <code className="text-blue-300 font-mono">Anime.Drive.2.1.1.apk</code> will be saved to your phone&apos;s Downloads folder.
               </p>
             </div>
             <div className="mt-4 pt-3 border-t border-white/5 text-[11px] text-slate-400 font-medium">
-              💡 File size: 54.5 MB
+              💡 File size: 54.7 MB
             </div>
           </div>
 

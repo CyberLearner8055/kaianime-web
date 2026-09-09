@@ -47,12 +47,12 @@ export default function AppPage() {
         {/* Action Download Buttons */}
         <div className="flex flex-wrap items-center justify-center gap-4 mt-8">
           <a
-            href="https://github.com/CyberLearner8055/animedrive-config/releases/download/V2.1/Anime.Drive.2.1.apk"
-            download="Anime.Drive.2.1.apk"
+            href="https://github.com/CyberLearner8055/animedrive-config/releases/download/V2.1/Anime.Drive.2.1.1.apk"
+            download="Anime.Drive.2.1.1.apk"
             className="inline-flex items-center gap-3 px-8 py-3.5 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-extrabold text-sm sm:text-base shadow-xl shadow-blue-600/35 transition-all transform hover:-translate-y-0.5 active:scale-95"
           >
             <Download className="w-5 h-5 animate-bounce" />
-            <span>Download Official APK (v2.1 • 54.5 MB)</span>
+            <span>Download Official APK (v2.1.1 • 54.7 MB)</span>
           </a>
 
           <a
@@ -67,7 +67,7 @@ export default function AppPage() {
         </div>
 
         <p className="text-xs text-slate-400 mt-4">
-          Requires Android 7.0+ • Version 2.1 • 54.5 MB • 100% Free &amp; Safe
+          Requires Android 7.0+ • Version 2.1.1 • 54.7 MB • 100% Free &amp; Safe
         </p>
       </div>
 

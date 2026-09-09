@@ -23,7 +23,7 @@ export default function DownloadPage() {
 
   const apkUrl =
     siteConfig.links?.apkDownloadUrl ||
-    "https://github.com/CyberLearner8055/animedrive-config/releases/download/V2.1/Anime.Drive.2.1.apk";
+    "https://github.com/CyberLearner8055/animedrive-config/releases/download/V2.1/Anime.Drive.2.1.1.apk";
   const animedriveUrl = siteConfig.links?.animedriveUrl || "https://animedrive.me";
   const telegramUrl = siteConfig.links?.telegramUrl || "https://t.me/animedrive";
   const whatsappUrl = siteConfig.links?.whatsappUrl || "https://whatsapp.com/channel/animedrive";
