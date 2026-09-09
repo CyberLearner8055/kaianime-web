@@ -670,7 +670,7 @@ export default function ArtPlayer({
         flip: true,
         playbackRate: true,
         aspectRatio: false, // Controlled via in-player button & setting
-        fullscreen: true,
+        fullscreen: false, // Dedicated high-visibility fullscreen button used instead
         fullscreenWeb: false,
         miniProgressBar: true,
         mutex: true,
@@ -818,20 +818,32 @@ export default function ArtPlayer({
               artRef.notice.show = "Skipped Intro (+85s)";
             },
           },
-          // Dedicated Fullscreen Button (Guaranteed on Mobile & Desktop)
+          // Dedicated High-Visibility Fullscreen Button (Guaranteed on Mobile & Desktop)
           {
             name: "fullscreen-toggle",
             position: "right",
             index: 99,
-            html: `<button class="p-1.5 hover:text-blue-400 transition-colors flex items-center justify-center text-white" title="Fullscreen" aria-label="Fullscreen">
-              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            html: `<button type="button" class="art-custom-fullscreen-btn" title="Fullscreen" aria-label="Fullscreen">
+              <svg class="art-fs-icon-enter" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>
+              </svg>
+              <svg class="art-fs-icon-exit" style="display:none;" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 14h6m0 0v6m0-6-7 7m17-11h-6m0 0V4m0 6 7-7M4 10h6m0 0V4m0 6-7-7m17 11h-6m0 0v6m0-6 7 7"/>
               </svg>
             </button>`,
             click: function (artRef: any) {
               const video = artRef.template?.$video;
-              if (artRef.fullscreen) {
+              if (artRef.fullscreen || artRef.fullscreenWeb) {
+                if (document.fullscreenElement) {
+                  document.exitFullscreen?.().catch(() => {});
+                }
                 artRef.fullscreen = false;
+                artRef.fullscreenWeb = false;
+                try {
+                  if (screen.orientation && screen.orientation.unlock) {
+                    screen.orientation.unlock();
+                  }
+                } catch (_) {}
               } else {
                 if (
                   video &&
@@ -841,7 +853,14 @@ export default function ArtPlayer({
                 ) {
                   video.webkitEnterFullscreen();
                 } else {
-                  artRef.fullscreen = true;
+                  try {
+                    artRef.fullscreen = true;
+                    if (screen.orientation && (screen.orientation as any).lock) {
+                      (screen.orientation as any).lock("landscape").catch(() => {});
+                    }
+                  } catch (_) {
+                    artRef.fullscreenWeb = true;
+                  }
                 }
               }
             },
@@ -885,6 +904,30 @@ export default function ArtPlayer({
 
       // Aspect Ratio 1-tap Button on Bottom Control Bar
       updateAspectControlBtn(art, "FIT");
+
+      // Sync Fullscreen icon on state change
+      const syncFullscreenIcon = (isFs: boolean) => {
+        try {
+          const btn = art.template?.$player?.querySelector(".art-custom-fullscreen-btn");
+          if (!btn) return;
+          const enterIcon = btn.querySelector(".art-fs-icon-enter") as HTMLElement;
+          const exitIcon = btn.querySelector(".art-fs-icon-exit") as HTMLElement;
+          if (enterIcon && exitIcon) {
+            if (isFs) {
+              enterIcon.style.display = "none";
+              exitIcon.style.display = "block";
+              btn.setAttribute("title", "Exit Fullscreen");
+            } else {
+              enterIcon.style.display = "block";
+              exitIcon.style.display = "none";
+              btn.setAttribute("title", "Fullscreen");
+            }
+          }
+        } catch (_) {}
+      };
+
+      art.on("fullscreen", (val: boolean) => syncFullscreenIcon(val));
+      art.on("fullscreenWeb", (val: boolean) => syncFullscreenIcon(val));
 
       // Auto-Resume playback from saved position
       if (initialTime && initialTime > 5) {
