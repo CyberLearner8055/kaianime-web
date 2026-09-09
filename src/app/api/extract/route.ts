@@ -94,18 +94,19 @@ async function handleExtract(
     const refererParam = data.referer || trimmed;
     const originParam = data.origin || "";
 
-    // Proxy the stream through /api/proxy with cache-buster &_v=2 to guarantee fresh un-cached playback
-    const proxiedStreamUrl = `/api/proxy?url=${encodeURIComponent(
+    // Proxy the stream with support for external unlimited stream proxy (e.g. Cloudflare Worker)
+    const proxyBase = process.env.STREAM_PROXY_URL || process.env.NEXT_PUBLIC_STREAM_PROXY_URL || "/api/proxy";
+    const proxiedStreamUrl = `${proxyBase}?url=${encodeURIComponent(
       data.url
     )}&_v=2&referer=${encodeURIComponent(refererParam)}&origin=${encodeURIComponent(originParam)}`;
 
-    // Proxy every subtitle track through /api/proxy to guarantee 100% CORS, WebVTT headers, and referer bypass
+    // Proxy every subtitle track to guarantee 100% CORS, WebVTT headers, and referer bypass
     const proxiedSubtitles = (data.subtitles || []).map((sub) => {
       const originalFile = sub.file || "";
       const isExternal =
         originalFile.startsWith("http://") || originalFile.startsWith("https://");
       const proxiedFile = isExternal
-        ? `/api/proxy?url=${encodeURIComponent(originalFile)}&referer=${encodeURIComponent(
+        ? `${proxyBase}?url=${encodeURIComponent(originalFile)}&referer=${encodeURIComponent(
             refererParam
           )}&origin=${encodeURIComponent(originParam)}&type=subtitle`
         : originalFile;
