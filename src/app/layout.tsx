@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import Script from "next/script";
 import "@/styles/globals.css";
 import AppLayoutWrapper from "@/components/AppLayoutWrapper";
 
@@ -84,6 +85,25 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="dark scroll-smooth">
+      <head>
+        {/* Google tag (gtag.js) */}
+        <Script
+          strategy="afterInteractive"
+          src="https://www.googletagmanager.com/gtag/js?id=G-SFQCMJ2VN1"
+        />
+        <Script
+          id="google-analytics"
+          strategy="afterInteractive"
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
+              gtag('js', new Date());
+              gtag('config', 'G-SFQCMJ2VN1');
+            `,
+          }}
+        />
+      </head>
       <body className="min-h-screen bg-[#050608] text-slate-100 antialiased selection:bg-blue-600 selection:text-white flex flex-col">
         <AppLayoutWrapper>{children}</AppLayoutWrapper>
       </body>
