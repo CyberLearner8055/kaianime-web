@@ -651,6 +651,52 @@ export default function ArtPlayer({
           (s) => s.default || s.label.toLowerCase().includes("eng")
         ) || subtitles[0];
 
+      let lastFsToggle = 0;
+      const toggleFullscreen = (artPlayer?: any) => {
+        const now = Date.now();
+        if (now - lastFsToggle < 300) return;
+        lastFsToggle = now;
+
+        const p = artPlayer || (artInstanceRef.current as any);
+        if (!p) return;
+
+        const isFull = !!(p.fullscreen || p.fullscreenWeb || (typeof document !== "undefined" && document.fullscreenElement));
+        const video = p.template?.$video;
+
+        if (isFull) {
+          if (typeof document !== "undefined" && document.fullscreenElement) {
+            document.exitFullscreen?.().catch(() => {});
+          }
+          p.fullscreen = false;
+          p.fullscreenWeb = false;
+          try {
+            if (typeof screen !== "undefined" && screen.orientation && screen.orientation.unlock) {
+              screen.orientation.unlock();
+            }
+          } catch (_) {}
+        } else {
+          // iOS Safari native video fullscreen support check
+          if (
+            video &&
+            video.webkitEnterFullscreen &&
+            typeof video.webkitEnterFullscreen === "function" &&
+            typeof document !== "undefined" &&
+            !document.fullscreenEnabled
+          ) {
+            video.webkitEnterFullscreen();
+          } else {
+            try {
+              p.fullscreen = true;
+              if (typeof screen !== "undefined" && screen.orientation && (screen.orientation as any).lock) {
+                (screen.orientation as any).lock("landscape").catch(() => {});
+              }
+            } catch (_) {
+              p.fullscreenWeb = true;
+            }
+          }
+        }
+      };
+
       const artOptions: any = {
         container: artContainerRef.current,
         url: url,
@@ -781,9 +827,11 @@ export default function ArtPlayer({
             html: `<button class="p-1 hover:text-blue-400 transition-colors" title="Rewind 10s">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 17l-5-5 5-5M18 17l-5-5 5-5"/></svg>
             </button>`,
-            click: function (artRef: any) {
-              artRef.currentTime = Math.max(0, artRef.currentTime - 10);
-              artRef.notice.show = "−10s";
+            click: function (this: any) {
+              const p = (this && this.currentTime !== undefined ? this : artInstanceRef.current);
+              if (!p) return;
+              p.currentTime = Math.max(0, p.currentTime - 10);
+              p.notice.show = "−10s";
             },
           },
           // Forward 10s
@@ -794,12 +842,11 @@ export default function ArtPlayer({
             html: `<button class="p-1 hover:text-blue-400 transition-colors" title="Forward 10s">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 17l5-5-5-5M6 17l5-5-5-5"/></svg>
             </button>`,
-            click: function (artRef: any) {
-              artRef.currentTime = Math.min(
-                artRef.duration || 0,
-                artRef.currentTime + 10
-              );
-              artRef.notice.show = "+10s";
+            click: function (this: any) {
+              const p = (this && this.currentTime !== undefined ? this : artInstanceRef.current);
+              if (!p) return;
+              p.currentTime = Math.min(p.duration || 0, p.currentTime + 10);
+              p.notice.show = "+10s";
             },
           },
           // Skip Intro +85s Button
@@ -810,12 +857,11 @@ export default function ArtPlayer({
             html: `<button style="padding:2px 7px;font-size:11px;font-weight:800;letter-spacing:0.3px;background:rgba(37,99,235,0.8);color:#fff;border-radius:6px;border:none;cursor:pointer;line-height:1.4;display:inline-flex;align-items:center;gap:3px;margin-left:4px;" title="Skip Anime Intro (+85s)">
               <span>⏩</span><span>+85s</span>
             </button>`,
-            click: function (artRef: any) {
-              artRef.currentTime = Math.min(
-                artRef.duration || 0,
-                artRef.currentTime + 85
-              );
-              artRef.notice.show = "Skipped Intro (+85s)";
+            click: function (this: any) {
+              const p = (this && this.currentTime !== undefined ? this : artInstanceRef.current);
+              if (!p) return;
+              p.currentTime = Math.min(p.duration || 0, p.currentTime + 85);
+              p.notice.show = "Skipped Intro (+85s)";
             },
           },
           // Dedicated High-Visibility Fullscreen Button (Guaranteed on Mobile & Desktop)
@@ -831,38 +877,9 @@ export default function ArtPlayer({
                 <path d="M4 14h6m0 0v6m0-6-7 7m17-11h-6m0 0V4m0 6 7-7M4 10h6m0 0V4m0 6-7-7m17 11h-6m0 0v6m0-6 7 7"/>
               </svg>
             </button>`,
-            click: function (artRef: any) {
-              const video = artRef.template?.$video;
-              if (artRef.fullscreen || artRef.fullscreenWeb) {
-                if (document.fullscreenElement) {
-                  document.exitFullscreen?.().catch(() => {});
-                }
-                artRef.fullscreen = false;
-                artRef.fullscreenWeb = false;
-                try {
-                  if (screen.orientation && screen.orientation.unlock) {
-                    screen.orientation.unlock();
-                  }
-                } catch (_) {}
-              } else {
-                if (
-                  video &&
-                  video.webkitEnterFullscreen &&
-                  typeof video.webkitEnterFullscreen === "function" &&
-                  !document.fullscreenEnabled
-                ) {
-                  video.webkitEnterFullscreen();
-                } else {
-                  try {
-                    artRef.fullscreen = true;
-                    if (screen.orientation && (screen.orientation as any).lock) {
-                      (screen.orientation as any).lock("landscape").catch(() => {});
-                    }
-                  } catch (_) {
-                    artRef.fullscreenWeb = true;
-                  }
-                }
-              }
+            click: function (this: any) {
+              const p = (this && this.template ? this : artInstanceRef.current);
+              toggleFullscreen(p);
             },
           },
         ],
@@ -926,8 +943,36 @@ export default function ArtPlayer({
         } catch (_) {}
       };
 
+      // Direct click & touch listener attachment to guarantee execution on every browser/device
+      const attachCustomFsListener = () => {
+        const btn = art.template?.$player?.querySelector(".art-custom-fullscreen-btn");
+        if (btn && !(btn as any).__boundFs) {
+          (btn as any).__boundFs = true;
+          const handler = (e: any) => {
+            e.preventDefault();
+            e.stopPropagation();
+            toggleFullscreen(art);
+          };
+          btn.addEventListener("click", handler);
+          btn.addEventListener("touchend", handler);
+        }
+      };
+
+      art.on("ready", attachCustomFsListener);
+      setTimeout(attachCustomFsListener, 100);
+      setTimeout(attachCustomFsListener, 400);
+      setTimeout(attachCustomFsListener, 1000);
+
       art.on("fullscreen", (val: boolean) => syncFullscreenIcon(val));
       art.on("fullscreenWeb", (val: boolean) => syncFullscreenIcon(val));
+      art.on("document:fullscreenchange", () => {
+        const isFs = !!(document.fullscreenElement || (art as any)?.fullscreen);
+        syncFullscreenIcon(isFs);
+      });
+      art.on("document:webkitfullscreenchange", () => {
+        const isFs = !!((document as any).webkitFullscreenElement || (art as any)?.fullscreen);
+        syncFullscreenIcon(isFs);
+      });
 
       // Auto-Resume playback from saved position
       if (initialTime && initialTime > 5) {

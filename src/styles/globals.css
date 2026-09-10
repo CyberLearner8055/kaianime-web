@@ -759,6 +759,11 @@ img {
   transform: scale(0.92) !important;
 }
 
+.art-custom-fullscreen-btn svg,
+.art-custom-fullscreen-btn path {
+  pointer-events: none !important;
+}
+
 /* Mobile Controls Optimization (< 640px): Prevent Bar Overflow & Keep Fullscreen Highly Visible */
 @media (max-width: 640px) {
   /* 1. Hide desktop-only & clutter controls */
