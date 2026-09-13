@@ -4,7 +4,6 @@ import React, { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
-  Play,
   ChevronLeft,
   ChevronRight,
   Server,
@@ -17,10 +16,10 @@ import {
   Copy,
   Check,
   Search,
+  RotateCw,
+  Smartphone,
 } from "lucide-react";
 import { Anime, Episode } from "@/lib/types";
-import ArtPlayer from "@/components/ArtPlayer";
-import AnimeDrivePlayerLoading from "@/components/AnimeDrivePlayerLoading";
 import WatchlistButton from "@/components/WatchlistButton";
 
 interface WatchClientProps {
@@ -35,14 +34,11 @@ export default function WatchClient({ anime, episode, epNumber }: WatchClientPro
   // Find current episode
   const currentEp =
     episode || anime.episodes.find((e) => e.number === epNumber) || anime.episodes[0];
+
   const [selectedServerIdx, setSelectedServerIdx] = useState(0);
-  const [streamUrl, setStreamUrl] = useState<string | null>(null);
-  const [subtitles, setSubtitles] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [useIframeFallback, setUseIframeFallback] = useState(false);
+  const [iframeKey, setIframeKey] = useState(0);
+  const [isIframeLoading, setIsIframeLoading] = useState(true);
   const [activeSeason, setActiveSeason] = useState(currentEp?.season || 1);
-  const [initialSeekTime, setInitialSeekTime] = useState<number>(0);
   const [copied, setCopied] = useState(false);
   const [shareUrl, setShareUrl] = useState("");
 
@@ -50,7 +46,7 @@ export default function WatchClient({ anime, episode, epNumber }: WatchClientPro
     if (currentEp?.season && currentEp.season !== activeSeason) {
       setActiveSeason(currentEp.season);
     }
-  }, [currentEp?.season]);
+  }, [currentEp?.season, activeSeason]);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -58,7 +54,8 @@ export default function WatchClient({ anime, episode, epNumber }: WatchClientPro
     }
   }, [epNumber, activeSeason]);
 
-  const availableServers: { name: string; url: string }[] = (() => {
+  // Available streaming servers for this episode
+  const availableServers: { name: string; url: string }[] = useMemo(() => {
     if (!currentEp || !currentEp.servers) return [];
     if (Array.isArray(currentEp.servers)) {
       return (currentEp.servers as any[]).map((s: any, idx: number) => ({
@@ -73,14 +70,14 @@ export default function WatchClient({ anime, episode, epNumber }: WatchClientPro
       }));
     }
     return [];
-  })();
+  }, [currentEp]);
 
   const serverList =
     availableServers.length > 0
       ? availableServers
       : [
           {
-            name: "Anime Drive HLS Server 1",
+            name: "Server 1 (Default)",
             url: "https://animedrive.me/stream/sample",
           },
         ];
@@ -88,156 +85,22 @@ export default function WatchClient({ anime, episode, epNumber }: WatchClientPro
   const currentServer = serverList[selectedServerIdx] || serverList[0];
   const rawServerUrl = currentServer?.url || "";
 
-  // Extract M3U8 Stream with fast failover and auto-fallback
+  // Reset loading state when server or episode changes
   useEffect(() => {
-    let isMounted = true;
-    setLoading(true);
-    setError(null);
-    setSubtitles([]);
-    setUseIframeFallback(false);
+    setIsIframeLoading(true);
+  }, [rawServerUrl, selectedServerIdx, epNumber, activeSeason]);
 
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => {
-      controller.abort();
-    }, 4500);
-
-    async function extract() {
-      if (!rawServerUrl) {
-        if (isMounted) setLoading(false);
-        return;
-      }
-
-      if (rawServerUrl.includes(".m3u8")) {
-        if (isMounted) {
-          setStreamUrl(rawServerUrl);
-          setLoading(false);
-        }
-        return;
-      }
-
-      try {
-        const res = await fetch("/api/extract", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            url: rawServerUrl,
-            title: anime.title,
-            season: activeSeason,
-            ep: epNumber,
-          }),
-          signal: controller.signal,
-        });
-
-        if (!isMounted) return;
-
-        if (!res.ok) {
-          throw new Error(`Extraction failed: ${res.status}`);
-        }
-
-        const data = await res.json();
-        const extractedM3u8 = data.m3u8 || data.streamUrl || data.url;
-        if (extractedM3u8) {
-          setStreamUrl(extractedM3u8);
-          setSubtitles(Array.isArray(data.subtitles) ? data.subtitles : []);
-          setUseIframeFallback(false);
-        } else {
-          // If this server returned no direct stream, try the next server if available
-          if (selectedServerIdx < serverList.length - 1) {
-            console.log(`[WatchClient] Empty stream on Server ${selectedServerIdx + 1}, switching to Server ${selectedServerIdx + 2}`);
-            setSelectedServerIdx((prev) => prev + 1);
-            return;
-          }
-          setUseIframeFallback(true);
-        }
-      } catch (err: any) {
-        if (!isMounted) return;
-        console.warn("[WatchClient] Extraction error / timeout:", err);
-        // Automatic server failover: if this server times out or fails, try the next server
-        if (selectedServerIdx < serverList.length - 1) {
-          console.log(`[WatchClient] Auto-switching to Server ${selectedServerIdx + 2}...`);
-          setSelectedServerIdx((prev) => prev + 1);
-          return;
-        }
-        // If all servers exhausted, fallback to web iframe player immediately so video plays
-        setUseIframeFallback(true);
-      } finally {
-        clearTimeout(timeoutId);
-        if (isMounted) setLoading(false);
-      }
-    }
-
-    extract();
-
-    return () => {
-      isMounted = false;
-      controller.abort();
-      clearTimeout(timeoutId);
-    };
-  }, [rawServerUrl]);
-
-  // Set current window share URL
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      setShareUrl(window.location.href);
-    }
-  }, []);
-
-  // Retrieve saved playback position to resume
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem("kaianime_history");
-      if (saved) {
-        const list = JSON.parse(saved);
-        const found = list.find(
-          (x: any) => x.id === anime.id && x.episodeNumber === epNumber
-        );
-        if (found && found.currentTime && found.currentTime > 5) {
-          if (!found.duration || found.currentTime / found.duration < 0.95) {
-            setInitialSeekTime(found.currentTime);
-          }
-        }
-      }
-    } catch (_) {}
-  }, [anime.id, epNumber]);
-
-  // Track playback position & update history in real time
-  const handleTimeUpdate = (currentTime: number, duration: number) => {
-    try {
-      const progressPercent = duration > 0 ? (currentTime / duration) * 100 : 0;
-      const historyItem = {
-        id: anime.id,
-        title: anime.title,
-        poster: anime.poster,
-        episodeNumber: epNumber,
-        currentTime: Math.round(currentTime),
-        duration: Math.round(duration),
-        progressPercent: Math.round(progressPercent),
-        timestamp: Date.now(),
-      };
-      const existing = localStorage.getItem("kaianime_history");
-      let list = existing ? JSON.parse(existing) : [];
-      list = [historyItem, ...list.filter((x: any) => x.id !== anime.id)].slice(0, 15);
-      localStorage.setItem("kaianime_history", JSON.stringify(list));
-    } catch (_) {}
-  };
-
-  // Save to Watch History on episode mount (preserving prior progress if exists)
+  // Save to Watch History on episode mount
   useEffect(() => {
     try {
       const existing = localStorage.getItem("kaianime_history");
       let list = existing ? JSON.parse(existing) : [];
-      const found = list.find(
-        (x: any) => x.id === anime.id && x.episodeNumber === epNumber
-      );
       const historyItem = {
         id: anime.id,
         title: anime.title,
         poster: anime.poster,
         episodeNumber: epNumber,
         season: currentEp?.season || 1,
-        currentTime: found?.currentTime || 0,
-        duration: found?.duration || 0,
-        progressPercent: found?.progressPercent || 0,
         timestamp: Date.now(),
       };
       list = [historyItem, ...list.filter((x: any) => x.id !== anime.id)].slice(0, 15);
@@ -268,12 +131,6 @@ export default function WatchClient({ anime, episode, epNumber }: WatchClientPro
     const epSeason = targetEp.season || activeSeason;
     const hasMultiple = (anime.seasons && anime.seasons.length > 1) || (epSeason && epSeason > 1);
     return `/watch/${anime.id}/${targetEp.number}${hasMultiple ? `?season=${epSeason}` : ""}`;
-  };
-
-  const handleVideoEnded = () => {
-    if (nextEp) {
-      router.push(getEpisodeWatchUrl(nextEp));
-    }
   };
 
   const [epSearch, setEpSearch] = useState("");
@@ -353,13 +210,11 @@ export default function WatchClient({ anime, episode, epNumber }: WatchClientPro
           </Link>
 
           <a
-            href="https://animedrive.me"
-            target="_blank"
-            rel="noopener noreferrer"
+            href="/download"
             className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 border border-blue-500/30 text-xs font-semibold transition-colors"
           >
             <Download className="w-3.5 h-3.5" />
-            <span>Download</span>
+            <span>App</span>
           </a>
         </div>
       </div>
@@ -370,57 +225,38 @@ export default function WatchClient({ anime, episode, epNumber }: WatchClientPro
           Watch <span className="text-blue-500">{anime.title}</span> {currentEp?.season && currentEp.season > 1 ? `Season ${currentEp.season} ` : ""}Episode {epNumber} Hindi Dubbed Online Free
         </h1>
         <p className="text-[11px] sm:text-xs text-slate-400 mt-0.5 font-medium">
-          Full HD 1080p &bull; 100% Ad-Free &bull; Multi-Audio (Hindi Dub, English Sub, Japanese)
+          Full HD 1080p &bull; High Speed Streaming &bull; Multi-Audio (Hindi Dub, English Sub, Japanese)
         </p>
       </div>
 
-      {/* Video Player Canvas Container (Mobile Full-Bleed, Desktop max-w-5xl Clean Fit) */}
+      {/* Iframe Video Player Canvas Container */}
       <div className="relative w-full aspect-video bg-black sm:rounded-2xl overflow-hidden border-y sm:border border-white/10 shadow-2xl shadow-blue-950/20">
-        {loading ? (
-          <AnimeDrivePlayerLoading />
-        ) : useIframeFallback ? (
-          <div className="w-full h-full relative bg-black">
-            <iframe
-              src={rawServerUrl}
-              className="w-full h-full border-0"
-              allowFullScreen
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            />
+        {isIframeLoading && (
+          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-[#07080c] gap-3">
+            <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
+            <p className="text-xs font-bold text-slate-300">Loading {currentServer?.name || "Player"}...</p>
+            <p className="text-[11px] text-slate-500">Connecting to high-speed stream server</p>
           </div>
-        ) : streamUrl ? (
-          <ArtPlayer
-            key={`${streamUrl}-${selectedServerIdx}`}
-            url={streamUrl}
-            subtitles={subtitles}
-            poster={anime.banner || anime.poster}
-            title={`${anime.title} - EP ${epNumber}`}
-            initialTime={initialSeekTime}
-            onTimeUpdate={handleTimeUpdate}
-            onEnded={handleVideoEnded}
-            onError={() => {
-              console.warn("[WatchClient] Stream playback error in ArtPlayer. Failing over...");
-              if (selectedServerIdx < serverList.length - 1) {
-                setSelectedServerIdx((prev) => prev + 1);
-              } else {
-                setUseIframeFallback(true);
-              }
-            }}
+        )}
+
+        {rawServerUrl ? (
+          <iframe
+            key={`${rawServerUrl}-${selectedServerIdx}-${iframeKey}`}
+            src={rawServerUrl}
+            className="w-full h-full border-0"
+            allowFullScreen
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            onLoad={() => setIsIframeLoading(false)}
           />
         ) : (
           <div className="w-full h-full flex flex-col items-center justify-center bg-[#07080c] text-slate-400 gap-3 p-6 text-center">
             <AlertCircle className="w-8 h-8 text-amber-400" />
-            <p className="text-xs sm:text-sm font-bold text-white">Direct stream unavailable on this server</p>
-            <button
-              onClick={() => setUseIframeFallback(true)}
-              className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs shadow-lg shadow-blue-600/30 transition-all"
-            >
-              Load Web Player Fallback
-            </button>
+            <p className="text-xs sm:text-sm font-bold text-white">No stream server available for this episode</p>
           </div>
         )}
       </div>
 
-      {/* Prominent Quick Prev / Next Episode Bar (Right Under Video Player) */}
+      {/* Prominent Quick Prev / Next Episode Bar */}
       <div className="mt-3 p-2 sm:p-2.5 rounded-xl sm:rounded-2xl bg-[#0a0d14] border border-blue-500/20 shadow-lg shadow-blue-950/20 flex items-center justify-between gap-2 mx-3 sm:mx-0">
         {prevEp ? (
           <Link
@@ -467,44 +303,74 @@ export default function WatchClient({ anime, episode, epNumber }: WatchClientPro
         )}
       </div>
 
-      {/* Stream Server Selection */}
+      {/* Stream Server Selection Bar */}
       <div className="mt-2.5 p-3 rounded-xl sm:rounded-2xl bg-[#0a0d14] border border-white/8 flex flex-wrap items-center justify-between gap-3 mx-3 sm:mx-0">
         <div className="flex items-center gap-2">
           <Server className="w-3.5 h-3.5 text-blue-400" />
-          <span className="text-xs text-slate-300 font-bold">Stream Server:</span>
+          <span className="text-xs text-slate-300 font-bold">Streaming Server:</span>
         </div>
 
-        <div className="flex items-center gap-1.5 overflow-x-auto">
+        <div className="flex items-center flex-wrap gap-1.5">
           {serverList.map((s, idx) => (
             <button
               key={idx}
               onClick={() => {
-                setUseIframeFallback(false);
-                setSelectedServerIdx(idx);
+                if (selectedServerIdx !== idx) {
+                  setSelectedServerIdx(idx);
+                  setIsIframeLoading(true);
+                }
               }}
               className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                !useIframeFallback && idx === selectedServerIdx
-                  ? "bg-blue-600 text-white shadow-md shadow-blue-600/30"
+                idx === selectedServerIdx
+                  ? "bg-blue-600 text-white shadow-md shadow-blue-600/30 ring-1 ring-blue-400"
                   : "bg-white/5 hover:bg-white/10 text-slate-300 border border-white/8"
               }`}
             >
               {s.name || `Server ${idx + 1}`}
             </button>
           ))}
-          {rawServerUrl && (
-            <button
-              onClick={() => setUseIframeFallback((prev) => !prev)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all border ${
-                useIframeFallback
-                  ? "bg-purple-600 border-purple-500 text-white shadow-md shadow-purple-600/30"
-                  : "bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white border-white/8"
-              }`}
-              title="Toggle Web Player"
-            >
-              {useIframeFallback ? "Web Player (Active)" : "Web Player"}
-            </button>
-          )}
+
+          {/* Reload Player Button */}
+          <button
+            onClick={() => {
+              setIsIframeLoading(true);
+              setIframeKey((prev) => prev + 1);
+            }}
+            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white border border-white/8 text-xs font-semibold transition-colors"
+            title="Reload Video Player"
+          >
+            <RotateCw className="w-3 h-3 text-blue-400" />
+            <span className="hidden sm:inline">Reload</span>
+          </button>
         </div>
+      </div>
+
+      {/* App Promotion Banner Card (Convert Web Visitors to App Users) */}
+      <div className="mt-3 p-3.5 sm:p-4 rounded-xl sm:rounded-2xl bg-gradient-to-r from-blue-950/60 via-[#0d1222] to-indigo-950/60 border border-blue-500/25 flex flex-col sm:flex-row items-center justify-between gap-3 mx-3 sm:mx-0 shadow-xl shadow-blue-950/20">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-blue-600/20 border border-blue-500/30 flex items-center justify-center shrink-0">
+            <Smartphone className="w-5 h-5 text-blue-400" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <h4 className="text-xs sm:text-sm font-extrabold text-white">Want 100% Ad-Free Experience?</h4>
+              <span className="px-1.5 py-0.5 rounded text-[10px] font-black bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 uppercase tracking-wide">
+                Free App
+              </span>
+            </div>
+            <p className="text-[11px] sm:text-xs text-slate-400 mt-0.5">
+              Download the official <strong>Anime Drive Android App</strong> for 0 ads, fast download, and 4K Ultra HD streaming!
+            </p>
+          </div>
+        </div>
+
+        <Link
+          href="/download"
+          className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-lg shadow-blue-600/40 transition-all active:scale-95 shrink-0"
+        >
+          <Download className="w-4 h-4" />
+          <span>Download App (APK)</span>
+        </Link>
       </div>
 
       {/* 1-Tap Social Share Bar */}
@@ -633,7 +499,7 @@ export default function WatchClient({ anime, episode, epNumber }: WatchClientPro
           </div>
         )}
 
-        {/* Standard Anime Compact Grid Buttons: [1] [2] [3] ... [25] */}
+        {/* Standard Anime Compact Grid Buttons */}
         {filteredEpisodes.length === 0 ? (
           <div className="py-6 text-center text-xs text-slate-400">
             No episode found matching &quot;{epSearch}&quot;
@@ -670,7 +536,7 @@ export default function WatchClient({ anime, episode, epNumber }: WatchClientPro
           <span>About {anime.title} {currentEp?.season && currentEp.season > 1 ? `Season ${currentEp.season} ` : ""}Episode {epNumber} Streaming &amp; Download</span>
         </h2>
         <p className="text-slate-400 leading-relaxed text-xs">
-          Watch and download <strong>{anime.title} {currentEp?.season && currentEp.season > 1 ? `Season ${currentEp.season} ` : ""}Episode {epNumber}</strong> online in Full HD with Hindi Dubbed audio and multi-language subtitles. Enjoy uninterrupted anime streaming completely free with 0 ads, 0 popups, and high-speed cloud servers on KaiAnime.me.
+          Watch and download <strong>{anime.title} {currentEp?.season && currentEp.season > 1 ? `Season ${currentEp.season} ` : ""}Episode {epNumber}</strong> online in Full HD with Hindi Dubbed audio and multi-language subtitles on KaiAnime.me.
         </p>
       </div>
     </div>
