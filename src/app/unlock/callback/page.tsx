@@ -20,6 +20,7 @@ interface PageProps {
     tier?: string;
     step?: string;
     total?: string;
+    uid?: string;
   }>;
 }
 
@@ -28,7 +29,8 @@ export default async function UnlockCallbackPage({ searchParams }: PageProps) {
   const tier = params.tier === 'vvip' ? 'vvip' : 'stream';
   const step = parseInt(params.step || '1') || 1;
   const total = parseInt(params.total || (tier === 'vvip' ? '3' : '1')) || 1;
-  const todayCode = getTodayAppCode();
+  const uid = (params.uid || 'default').trim();
+  const todayCode = getTodayAppCode(uid);
 
   return (
     <UnlockCallbackClient
@@ -36,6 +38,7 @@ export default async function UnlockCallbackPage({ searchParams }: PageProps) {
       step={step}
       total={total}
       todayCode={todayCode}
+      uid={uid}
     />
   );
 }
