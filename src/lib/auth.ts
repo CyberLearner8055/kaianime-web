@@ -8,8 +8,9 @@ export const COOKIE_NAME = 'kaianime_admin_token';
 
 export function verifyAdminCredentials(email: string, pass: string): boolean {
   if (!email || !pass) return false;
+  const normalized = email.trim().toLowerCase();
   return (
-    email.trim().toLowerCase() === ADMIN_EMAIL.toLowerCase() &&
+    (normalized === ADMIN_EMAIL.toLowerCase() || normalized === 'farhan') &&
     pass.trim() === ADMIN_PASS
   );
 }

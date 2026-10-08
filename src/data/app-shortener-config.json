@@ -1,0 +1,29 @@
+{
+  "enabled": true,
+  "streamShortenersRequired": 1,
+  "vvipShortenersRequired": 3,
+  "validityHours": 24,
+  "shorteners": [
+    {
+      "id": "linksflys",
+      "name": "Linksflys",
+      "urlTemplate": "https://linksflys.com/st?api=36b00a28f5cdf4e2efe9eec3138f279632d615cd&url={destination}",
+      "enabled": true,
+      "priority": 1
+    },
+    {
+      "id": "shrinkme",
+      "name": "Shrinkme",
+      "urlTemplate": "https://shrinkme.io/st?api=9225c1d7490739f1c586c7ef75cdc8379cf50e25&url={destination}",
+      "enabled": true,
+      "priority": 2
+    },
+    {
+      "id": "shrinkearn",
+      "name": "ShrinkEarn",
+      "urlTemplate": "https://shrinkearn.com/st?api=f85097d90d9506642dba6949bf7c75671c87d676&url={destination}",
+      "enabled": true,
+      "priority": 3
+    }
+  ]
+}
