@@ -63,8 +63,8 @@ export default async function UnlockPage({ searchParams }: PageProps) {
   const proto = host.includes('localhost') ? 'http' : 'https';
   const origin = `${proto}://${host}`;
 
-  // Destination callback after shortener completes
-  const callbackUrl = `${origin}/unlock/callback?tier=${tier}&step=${currentStep}&total=${totalSteps}&uid=${encodeURIComponent(uid)}`;
+  // Destination callback after shortener completes (clean path URL without '?' or '&' so Adlinkfly does not corrupt it)
+  const callbackUrl = `${origin}/unlock/c/${tier}_${currentStep}_${totalSteps}_${uid}`;
 
   // Build quicklink URL
   const targetUrl = buildShortenerUrl(selectedShortener, callbackUrl);

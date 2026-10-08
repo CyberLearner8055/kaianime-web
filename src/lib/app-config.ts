@@ -120,17 +120,19 @@ export function getActiveShorteners(config: AppShortenerConfig): AppShortener[] 
 
 export function buildShortenerUrl(shortener: AppShortener, destinationUrl: string): string {
   const template = shortener.urlTemplate || '';
-  const encodedDest = encodeURIComponent(destinationUrl);
+  // DO NOT use encodeURIComponent here because Adlinkfly quicklinks (Linksflys, Shrinkme, ShrinkEarn)
+  // extract url via window.location.href.split('&url='). If encoded, they do not recognize https://
+  // and treat it as an invalid path, causing browser "Blocked" error upon completion.
   if (template.includes('{destination}')) {
-    return template.replace('{destination}', encodedDest);
+    return template.replace('{destination}', destinationUrl);
   }
   if (template.includes('yourdestinationlink.com')) {
-    return template.replace('yourdestinationlink.com', encodedDest);
+    return template.replace('yourdestinationlink.com', destinationUrl);
   }
   if (template.includes('url=')) {
-    return template.replace(/url=[^&]*/, `url=${encodedDest}`);
+    return template.replace(/url=[^&]*/, `url=${destinationUrl}`);
   }
-  return `${template}${template.includes('?') ? '&' : '?'}url=${encodedDest}`;
+  return `${template}${template.includes('?') ? '&' : '?'}url=${destinationUrl}`;
 }
 
 // 4-Digit Dynamic Code Generator matching Anime Drive App CodeService algorithm
