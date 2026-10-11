@@ -20,6 +20,7 @@ import {
   LogOut,
   Layers,
   KeyRound,
+  BarChart3,
 } from 'lucide-react';
 import { AppShortener, AppShortenerConfig, getTodayAppCode } from '@/lib/app-config';
 
@@ -185,6 +186,15 @@ export default function AppAdminClient({ initialConfig }: Props) {
           </div>
 
           <div className="flex items-center gap-3">
+            <a
+              href="https://script.google.com/macros/s/AKfycbwz3t4Lnntv_rhDMrsDe0uN8V7vRJBm6QWyziV8mw1LuvRDohS2iw8Urk3H0wjvtZogpQ/exec?page=dashboard"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-3.5 py-2 rounded-xl bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/30 text-xs font-semibold text-indigo-300 hover:text-white transition-all flex items-center gap-1.5"
+            >
+              <BarChart3 className="w-3.5 h-3.5 text-indigo-400" /> Live Analytics
+            </a>
+
             <a
               href="/ad-admin"
               className="px-3.5 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-medium text-gray-300 hover:text-white transition-all flex items-center gap-1.5"
