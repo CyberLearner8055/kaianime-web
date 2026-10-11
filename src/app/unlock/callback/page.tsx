@@ -30,7 +30,7 @@ export default async function UnlockCallbackPage({ searchParams }: PageProps) {
   const step = parseInt(params.step || '1') || 1;
   const total = parseInt(params.total || (tier === 'vvip' ? '3' : '1')) || 1;
   const uid = (params.uid || 'default').trim();
-  const todayCode = getTodayAppCode(uid);
+  const todayCode = getTodayAppCode(uid, step);
 
   return (
     <UnlockCallbackClient

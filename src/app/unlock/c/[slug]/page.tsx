@@ -31,7 +31,7 @@ export default async function UnlockSlugPage({ params }: PageProps) {
   const step = parseInt(parts[1] || '1') || 1;
   const total = parseInt(parts[2] || (tier === 'vvip' ? '3' : '1')) || 1;
   const uid = parts.slice(3).join('_') || 'default';
-  const todayCode = getTodayAppCode(uid);
+  const todayCode = getTodayAppCode(uid, step);
 
   return (
     <UnlockCallbackClient
