@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Crown,
   Play,
@@ -59,25 +59,37 @@ export default function UnlockCallbackClient({
     }
   };
 
+  useEffect(() => {
+    // 1. Auto-copy code on page load so clipboard is ready for app
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(todayCode);
+      }
+    } catch (_) {}
+
+    // 2. Notify unlock sync API
+    try {
+      fetch('/api/unlock-sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ uid, tier, step, total, code: todayCode }),
+      }).catch(() => {});
+    } catch (_) {}
+  }, [todayCode, uid, tier, step, total]);
+
   const handleOpenApp = () => {
+    copyCode();
     setLaunchingApp(true);
+    try {
+      window.location.href = customSchemeUri;
+    } catch (_) {}
 
-    // 1. First attempt: Safe hidden iframe for custom scheme
-    const iframe = document.createElement('iframe');
-    iframe.style.display = 'none';
-    iframe.src = customSchemeUri;
-    document.body.appendChild(iframe);
-
-    // 2. Second attempt: Android Intent URI on current window
     setTimeout(() => {
-      try {
-        document.body.removeChild(iframe);
-      } catch (_) {}
       try {
         window.location.href = androidIntentUri;
       } catch (_) {}
       setLaunchingApp(false);
-    }, 400);
+    }, 500);
   };
 
   return (
@@ -184,10 +196,10 @@ export default function UnlockCallbackClient({
 
           {/* Primary Action Button: Open App */}
           <div className="space-y-3">
-            <button
+            <a
+              href={customSchemeUri}
               onClick={handleOpenApp}
-              disabled={launchingApp}
-              className={`w-full py-4 px-6 text-white font-bold rounded-2xl shadow-xl flex items-center justify-center gap-2.5 text-base transition-all transform active:scale-95 ${
+              className={`w-full py-4 px-6 text-white font-bold rounded-2xl shadow-xl flex items-center justify-center gap-2.5 text-base transition-all transform active:scale-95 no-underline cursor-pointer ${
                 tier === 'vvip' && isFinalStep
                   ? 'bg-gradient-to-r from-amber-500 hover:from-amber-400 to-orange-500 shadow-amber-500/30'
                   : 'bg-gradient-to-r from-emerald-500 hover:from-emerald-400 to-teal-500 shadow-emerald-500/30'
@@ -199,7 +211,7 @@ export default function UnlockCallbackClient({
                 : isFinalStep
                 ? 'Open Anime Drive App'
                 : `Apply Step ${step} in Anime Drive`}
-            </button>
+            </a>
 
             <p className="text-xs text-gray-400 leading-relaxed px-2">
               Upar button dabakar app kholein, ya phir code copy karke Anime Drive App me paste karein.

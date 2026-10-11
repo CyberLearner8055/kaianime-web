@@ -1,6 +1,7 @@
 import React from 'react';
 import { Metadata } from 'next';
 import { getTodayAppCode } from '@/lib/app-config';
+import { recordUserUnlock } from '@/lib/unlock-store';
 import UnlockCallbackClient from '../../callback/UnlockCallbackClient';
 
 export const dynamic = 'force-dynamic';
@@ -32,6 +33,11 @@ export default async function UnlockSlugPage({ params }: PageProps) {
   const total = parseInt(parts[2] || (tier === 'vvip' ? '3' : '1')) || 1;
   const uid = parts.slice(3).join('_') || 'default';
   const todayCode = getTodayAppCode(uid, step);
+
+  // Sync unlock record in memory for mobile app polling
+  try {
+    recordUserUnlock(uid, tier, step, total, todayCode);
+  } catch (_) {}
 
   return (
     <UnlockCallbackClient
