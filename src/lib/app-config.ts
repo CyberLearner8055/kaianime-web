@@ -140,9 +140,9 @@ const SECRET_SEED = 'AnimeDrive#Farhan@7ug2Kx9pLm';
 const BUCKET_MS = 10 * 60 * 1000;
 
 export function getTodayAppCode(uid?: string, step: number = 1): string {
-  const cleanUid = (uid || 'default').trim().toLowerCase();
   const bucket = Math.floor(Date.now() / BUCKET_MS);
-  const seed = `${SECRET_SEED}#${cleanUid}#${bucket}#step${step}`;
+  // Universal step code: distinct for each step, rotates every 10-20 mins, immune to UID mismatch
+  const seed = `${SECRET_SEED}#${bucket}#step${step}`;
   let h = 0;
   for (let i = 0; i < seed.length; i++) {
     h = (h * 31 + seed.charCodeAt(i)) % 1000000007;
